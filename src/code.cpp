@@ -187,29 +187,81 @@ void compute_n_dim_offset(hsize_t n_dims, hsize_t *dims, hsize_t *n_offset, hsiz
     }
 }
 
+hsize_t get_max_read_dimension(hsize_t n_dims, hsize_t* start_off, hsize_t* end_off){
+    for (hsize_t i = 0; i < n_dims; i++)
+    {
+        hsize_t j = n_dims - i - 1;
+        if (start_off[j] != end_off[j])
+        {
+            return j;
+        }
+    }
+    return 0;
+}
+
 size_t read_h5_vector(const Travel_altrep_info *altrep_info, void *buffer, size_t offset, size_t length)
 {
     H5_data &data = *(H5_data *)altrep_info->private_data;
+    DataSpace &dataspace = data.dataspace;
     //Get the starting offset in the dataset
     compute_n_dim_offset(data.n_dims, data.dims, data.sub_start_offset, offset);
     compute_n_dim_offset(data.n_dims, data.dims, data.sub_end_offset, offset + length);
+    size_t max_read_dim = get_max_read_dimension(data.n_dims,data.sub_start_offset,data.sub_end_offset);
     //Initialize the subset size
     for (size_t i = 0; i < data.n_dims; i++)
     {
-        data.sub_required_length[i] = data.sub_end_offset[i] - data.sub_start_offset[i] + 1;
-        data.sub_read_length[i] = data.dims[i];
+        data.sub_read_length[i] = 1;
     }
-
-    DataSpace &dataspace = data.dataspace;
+    //We must read the marginal data first
+    //The marginal data is the data that cannot be read by block
     size_t buffer_read_length = 0;
     uint8_t unit_size = get_type_size(altrep_info->type);
     char *buffer_ptr = (char *)buffer;
-    for (size_t i = 0; i < data.n_dims; i++)
+    for (size_t i = 0; i < max_read_dim; i++)
     {
-        size_t j = data.n_dims - i - 1;
-        if (data.sub_required_length[j] != 1)
+        //If the current dimension index is not 0
+        //We do the partial reading and make it zero.
+        if (data.sub_start_offset[i] != 0)
         {
-            data.sub_read_length[j] = data.sub_required_length[j];
+            data.sub_read_length[i] = data.dims[i] - data.sub_start_offset[i];
+            dataspace.selectHyperslab(H5S_SELECT_SET, data.sub_read_length, data.sub_start_offset);
+            read_by_type(altrep_info->type, data.dataset, dataspace, dataspace, buffer_ptr + unit_size * buffer_read_length);
+            buffer_read_length += dataspace.getSelectHyperNblocks();
+            data.sub_start_offset[i] = 0;
+            //Move the offset in the higher dimension forward by 1, check if it is out-of-bound
+            ++data.sub_start_offset[i + 1];
+            for (size_t j = i + 1; j < max_read_dim; j++)
+            {
+                if (data.sub_start_offset[j] == data.dims[j])
+                {
+                    data.sub_start_offset[j] = 0;
+                    ++data.sub_start_offset[j + 1];
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        data.sub_read_length[i] = data.dims[i];
+    }
+    //Update the required length
+    size_t new_max_read_dim = 0;
+    if (max_read_dim != 0)
+    {
+        new_max_read_dim = get_max_read_dimension(data.n_dims,data.sub_start_offset,data.sub_end_offset);
+        //Reset the read length for the dimensions that are not required
+        for (size_t i = new_max_read_dim + 1; i <= max_read_dim; i++)
+        {
+            data.sub_read_length[i] = 1;
+        }
+    }
+    for (size_t i = 0; i <= new_max_read_dim; i++)
+    {
+        size_t j = new_max_read_dim - i;
+        if (data.sub_end_offset[j] != data.sub_start_offset[i])
+        {
+            data.sub_read_length[i] = data.sub_end_offset[j] - data.sub_start_offset[i];
             dataspace.selectHyperslab(H5S_SELECT_SET, data.sub_read_length, data.sub_start_offset);
             read_by_type(altrep_info->type, data.dataset, dataspace, dataspace, buffer_ptr + unit_size * buffer_read_length);
             buffer_read_length += dataspace.getSelectHyperNblocks();
