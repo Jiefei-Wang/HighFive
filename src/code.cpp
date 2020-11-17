@@ -214,6 +214,7 @@ size_t read_h5_vector(const Travel_altrep_info *altrep_info, void *buffer, size_
             read_by_type(altrep_info->type, data.dataset, dataspace, dataspace, buffer_ptr + unit_size * buffer_read_length);
             buffer_read_length += dataspace.getSelectHyperNblocks();
             data.sub_read_length[j] = 1;
+            data.sub_start_offset[j] = data.sub_end_offset[j];
         }
     }
     return buffer_read_length;

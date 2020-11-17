@@ -41,3 +41,7 @@ vignettes/*.pdf
 
 inst/
 src/.vscode
+
+debug_output
+*.h5
+*.hdf5
