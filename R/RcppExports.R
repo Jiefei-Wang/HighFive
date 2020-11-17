@@ -5,3 +5,19 @@ test <- function() {
     invisible(.Call(`_HighFive_test`))
 }
 
+read_h5_vector <- function(type, file_name, dataset_name, offset, length) {
+    .Call(`_HighFive_read_h5_vector`, type, file_name, dataset_name, offset, length)
+}
+
+C_make_arithmetic_sequence_altrep <- function(n) {
+    .Call(`_HighFive_C_make_arithmetic_sequence_altrep`, n)
+}
+
+C_make_h5_altrep <- function(type, file_name, dataset_name) {
+    .Call(`_HighFive_C_make_h5_altrep`, type, file_name, dataset_name)
+}
+
+C_read_h5_altrep <- function(type, file_name, dataset_name, offset, length) {
+    .Call(`_HighFive_C_read_h5_altrep`, type, file_name, dataset_name, offset, length)
+}
+

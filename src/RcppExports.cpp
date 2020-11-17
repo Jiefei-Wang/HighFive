@@ -14,9 +14,67 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// read_h5_vector
+SEXP read_h5_vector(int type, String file_name, String dataset_name, size_t offset, size_t length);
+RcppExport SEXP _HighFive_read_h5_vector(SEXP typeSEXP, SEXP file_nameSEXP, SEXP dataset_nameSEXP, SEXP offsetSEXP, SEXP lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type type(typeSEXP);
+    Rcpp::traits::input_parameter< String >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< String >::type dataset_name(dataset_nameSEXP);
+    Rcpp::traits::input_parameter< size_t >::type offset(offsetSEXP);
+    Rcpp::traits::input_parameter< size_t >::type length(lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(read_h5_vector(type, file_name, dataset_name, offset, length));
+    return rcpp_result_gen;
+END_RCPP
+}
+// C_make_arithmetic_sequence_altrep
+SEXP C_make_arithmetic_sequence_altrep(double n);
+RcppExport SEXP _HighFive_C_make_arithmetic_sequence_altrep(SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_make_arithmetic_sequence_altrep(n));
+    return rcpp_result_gen;
+END_RCPP
+}
+// C_make_h5_altrep
+SEXP C_make_h5_altrep(int type, String file_name, String dataset_name);
+RcppExport SEXP _HighFive_C_make_h5_altrep(SEXP typeSEXP, SEXP file_nameSEXP, SEXP dataset_nameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type type(typeSEXP);
+    Rcpp::traits::input_parameter< String >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< String >::type dataset_name(dataset_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_make_h5_altrep(type, file_name, dataset_name));
+    return rcpp_result_gen;
+END_RCPP
+}
+// C_read_h5_altrep
+SEXP C_read_h5_altrep(int type, String file_name, String dataset_name, size_t offset, size_t length);
+RcppExport SEXP _HighFive_C_read_h5_altrep(SEXP typeSEXP, SEXP file_nameSEXP, SEXP dataset_nameSEXP, SEXP offsetSEXP, SEXP lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type type(typeSEXP);
+    Rcpp::traits::input_parameter< String >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< String >::type dataset_name(dataset_nameSEXP);
+    Rcpp::traits::input_parameter< size_t >::type offset(offsetSEXP);
+    Rcpp::traits::input_parameter< size_t >::type length(lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_read_h5_altrep(type, file_name, dataset_name, offset, length));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_HighFive_test", (DL_FUNC) &_HighFive_test, 0},
+    {"_HighFive_read_h5_vector", (DL_FUNC) &_HighFive_read_h5_vector, 5},
+    {"_HighFive_C_make_arithmetic_sequence_altrep", (DL_FUNC) &_HighFive_C_make_arithmetic_sequence_altrep, 1},
+    {"_HighFive_C_make_h5_altrep", (DL_FUNC) &_HighFive_C_make_h5_altrep, 3},
+    {"_HighFive_C_read_h5_altrep", (DL_FUNC) &_HighFive_C_read_h5_altrep, 5},
     {NULL, NULL, 0}
 };
 
