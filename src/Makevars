@@ -1,3 +1,10 @@
-RHDF5_LIBS=$(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e \ 
-    'Rhdf5lib::pkgconfig("PKG_C_LIBS")') 
+RHDF5_LIBS=$(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'Rhdf5lib::pkgconfig("PKG_CXX_LIBS")') 
 PKG_LIBS=$(RHDF5_LIBS)
+
+TRAVEL_OBJECT_LIBS = $(shell echo 'Travel:::pkgconfig("PKG_LIBS")'|\
+                     "${R_HOME}/bin/R" --vanilla --slave)
+TRAVEL_OBJECT_CPPFLAGS = $(shell echo 'Travel:::pkgconfig("PKG_CPPFLAGS")'|\
+                         "${R_HOME}/bin/R" --vanilla --slave)
+                         
+PKG_LIBS := $(PKG_LIBS) $(TRAVEL_OBJECT_LIBS)
+PKG_CPPFLAGS := $(PKG_CPPFLAGS) $(TRAVEL_OBJECT_CPPFLAGS)
