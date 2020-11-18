@@ -122,7 +122,7 @@ static void compute_n_dim_offset(hsize_t n_dims, hsize_t *dims, hsize_t *n_offse
     hsize_t length_rest = offset;
     for (hsize_t i = 0; i < n_dims; i++)
     {
-        hsize_t j = transpose?i:(n_dims - 1 - i);
+        hsize_t j = transpose ? i : (n_dims - 1 - i);
         n_offset[j] = length_rest % dims[j];
         length_rest = length_rest / dims[j];
     }
@@ -130,7 +130,14 @@ static void compute_n_dim_offset(hsize_t n_dims, hsize_t *dims, hsize_t *n_offse
     //read the entire data
     if (length_rest >= 1)
     {
-        n_offset[0] = dims[0];
+        if (!transpose)
+        {
+            n_offset[0] = dims[0];
+        }
+        else
+        {
+            n_offset[n_dims - 1] = dims[n_dims - 1];
+        }
     }
 }
 
@@ -225,7 +232,6 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
     return buffer_read_length;
 }
 
-
 static Unique_buffer transpose_buffer;
 size_t H5_vector_reader::read_transposed(int type, void *buffer, size_t offset, size_t length)
 {
@@ -233,19 +239,24 @@ size_t H5_vector_reader::read_transposed(int type, void *buffer, size_t offset, 
     //Get the starting offset in the dataset
     compute_n_dim_offset(n_dims, dims, sub_transposed_start_offset, offset, true);
     compute_n_dim_offset(n_dims, dims, sub_transposed_end_offset, offset + length, true);
-    hsize_t max_buffer_length = sub_transposed_end_offset[1]-sub_transposed_start_offset[1]+1;
+    hsize_t max_buffer_length = sub_transposed_end_offset[1] - sub_transposed_start_offset[1] + 1;
     transpose_buffer.reserve(type_size * max_buffer_length);
-    char* transpose_buffer_ptr = transpose_buffer.get();
-    char* buffer_ptr = (char*) buffer;
+    char *transpose_buffer_ptr = transpose_buffer.get();
+    char *buffer_ptr = (char *)buffer;
     //read the data row by row
-    for(hsize_t start_dim0 = 0;start_dim0<dims[0];start_dim0++){
+    for (hsize_t start_dim0 = 0; start_dim0 < dims[0]; start_dim0++)
+    {
         hsize_t start_dim1 = sub_transposed_start_offset[0] + (start_dim0 < sub_transposed_start_offset[0]);
-        if(start_dim1<=sub_transposed_end_offset[1]){
-            hsize_t required_length = sub_transposed_end_offset[1]-start_dim1+1;
-            read_native(type, transpose_buffer_ptr, start_dim0*dims[1]+start_dim1, required_length);
+        if (start_dim1 <= sub_transposed_end_offset[1])
+        {
+            hsize_t required_length = 1 + sub_transposed_end_offset[1] -
+                                      (start_dim0 >= sub_transposed_end_offset[0]) - start_dim1;
+            read_native(type, transpose_buffer_ptr, start_dim0 * dims[1] + start_dim1, required_length);
             //move the row data to the buffer
-            for(hsize_t j = 0;j<required_length;j++){
-                buffer_ptr[type_size*(start_dim0+(start_dim1+j)*dims[0])]= transpose_buffer_ptr[type_size*j];
+            for (hsize_t j = 0; j < required_length; j++)
+            {
+                memcpy(buffer_ptr + type_size * (start_dim0 + (start_dim1 + j) * dims[0]),
+                       transpose_buffer_ptr + type_size * j, type_size);
             }
         }
     }
