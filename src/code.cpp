@@ -115,7 +115,6 @@ struct H5_data
             dataspace = dataset.getSpace();
             n_dims = dataspace.getSimpleExtentNdims();
             dims = new hsize_t[n_dims];
-            sub_required_length = new hsize_t[n_dims];
             sub_read_length = new hsize_t[n_dims];
             sub_start_offset = new hsize_t[n_dims];
             sub_end_offset = new hsize_t[n_dims];
@@ -141,10 +140,6 @@ struct H5_data
         {
             delete[] sub_end_offset;
         }
-        if (sub_required_length != nullptr)
-        {
-            delete[] sub_required_length;
-        }
         if (sub_read_length != nullptr)
         {
             delete[] sub_read_length;
@@ -158,7 +153,6 @@ struct H5_data
     hsize_t *dims;
     hsize_t *sub_start_offset = nullptr;
     hsize_t *sub_end_offset = nullptr;
-    hsize_t *sub_required_length = nullptr;
     hsize_t *sub_read_length = nullptr;
 };
 void read_by_type(int type, DataSet &dataset, DataSpace &dataspace, DataSpace &memspace, void *buffer)
@@ -182,40 +176,62 @@ void compute_n_dim_offset(hsize_t n_dims, hsize_t *dims, hsize_t *n_offset, hsiz
     hsize_t length_rest = offset;
     for (hsize_t i = 0; i < n_dims; i++)
     {
-        n_offset[i] = length_rest % dims[i];
-        length_rest = length_rest / dims[i];
+        hsize_t j = n_dims - 1 - i;
+        n_offset[j] = length_rest % dims[j];
+        length_rest = length_rest / dims[j];
     }
     //If length_rest is not zero, it means we will
     //read the entire data
-    if(length_rest==1){
-        n_offset[n_dims-1] = dims[n_dims-1];
+    if (length_rest >= 1)
+    {
+        n_offset[0] = dims[0];
     }
 }
 
-hsize_t get_max_read_dimension(hsize_t n_dims, hsize_t* start_off, hsize_t* end_off){
+hsize_t get_min_read_dimension(hsize_t n_dims, hsize_t *start_off, hsize_t *end_off)
+{
     for (hsize_t i = 0; i < n_dims; i++)
     {
-        hsize_t j = n_dims - i - 1;
-        if (start_off[j] != end_off[j])
+        if (start_off[i] != end_off[i])
         {
-            return j;
+            return i;
         }
     }
     return 0;
+}
+//Move the index by one unit in along a specific dimension
+//If the index is out-off-bound, add 1 to the next dimension
+void move_by_one(hsize_t *dims, hsize_t *index, hsize_t moved_dim_index)
+{
+    ++index[moved_dim_index];
+    for (size_t j = moved_dim_index; j != 0; j--)
+    {
+        if (index[j] == dims[j])
+        {
+            index[j] = 0;
+            ++index[j - 1];
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 size_t read_h5_vector(const Travel_altrep_info *altrep_info, void *buffer, size_t offset, size_t length)
 {
     H5_data &data = *(H5_data *)altrep_info->private_data;
     DataSpace &dataspace = data.dataspace;
+    hsize_t &n_dims = data.n_dims;
+    hsize_t *&dims = data.dims;
     hsize_t h5_size = length;
     DataSpace memspace(1, &h5_size, NULL);
     //Get the starting offset in the dataset
-    compute_n_dim_offset(data.n_dims, data.dims, data.sub_start_offset, offset);
-    compute_n_dim_offset(data.n_dims, data.dims, data.sub_end_offset, offset + length);
-    size_t max_read_dim = get_max_read_dimension(data.n_dims,data.sub_start_offset,data.sub_end_offset);
+    compute_n_dim_offset(n_dims, dims, data.sub_start_offset, offset);
+    compute_n_dim_offset(n_dims, dims, data.sub_end_offset, offset + length);
+    size_t min_read_dim = get_min_read_dimension(n_dims, data.sub_start_offset, data.sub_end_offset);
     //Initialize the subset size
-    for (size_t i = 0; i < data.n_dims; i++)
+    for (size_t i = 0; i < n_dims; i++)
     {
         data.sub_read_length[i] = 1;
     }
@@ -224,58 +240,46 @@ size_t read_h5_vector(const Travel_altrep_info *altrep_info, void *buffer, size_
     size_t buffer_read_length = 0;
     uint8_t unit_size = get_type_size(altrep_info->type);
     char *buffer_ptr = (char *)buffer;
-    for (size_t i = 0; i < max_read_dim; i++)
+    for (size_t i = min_read_dim + 1; i < n_dims; i++)
     {
+        hsize_t k = n_dims - i + min_read_dim;
         //If the current dimension index is not 0
         //We do the partial reading and make it zero.
-        if (data.sub_start_offset[i] != 0)
+        if (data.sub_start_offset[k] != 0)
         {
-            data.sub_read_length[i] = data.dims[i] - data.sub_start_offset[i];
+            data.sub_read_length[k] = dims[k] - data.sub_start_offset[k];
             dataspace.selectHyperslab(H5S_SELECT_SET, data.sub_read_length, data.sub_start_offset);
-            memspace= DataSpace(data.n_dims, data.sub_read_length, NULL);
+            memspace = DataSpace(n_dims, data.sub_read_length, NULL);
             read_by_type(altrep_info->type, data.dataset, dataspace, memspace, buffer_ptr + unit_size * buffer_read_length);
             buffer_read_length += dataspace.getSelectHyperNblocks();
-            data.sub_start_offset[i] = 0;
+            data.sub_start_offset[k] = 0;
             //Move the offset in the higher dimension forward by 1, check if it is out-of-bound
-            ++data.sub_start_offset[i + 1];
-            for (size_t j = i + 1; j < max_read_dim; j++)
-            {
-                if (data.sub_start_offset[j] == data.dims[j])
-                {
-                    data.sub_start_offset[j] = 0;
-                    ++data.sub_start_offset[j + 1];
-                }
-                else
-                {
-                    break;
-                }
-            }
+            move_by_one(dims, data.sub_start_offset, k-1);
         }
-        data.sub_read_length[i] = data.dims[i];
+        data.sub_read_length[k] = dims[k];
     }
     //Update the required length
-    size_t new_max_read_dim = 0;
-    if (max_read_dim != 0)
+    size_t new_min_read_dim = 0;
+    if (min_read_dim != 0)
     {
-        new_max_read_dim = get_max_read_dimension(data.n_dims,data.sub_start_offset,data.sub_end_offset);
+        new_min_read_dim = get_min_read_dimension(n_dims, data.sub_start_offset, data.sub_end_offset);
         //Reset the read length for the dimensions that are not required
-        for (size_t i = new_max_read_dim + 1; i <= max_read_dim; i++)
+        for (size_t i = min_read_dim; i < new_min_read_dim; i++)
         {
             data.sub_read_length[i] = 1;
         }
     }
-    for (size_t i = 0; i <= new_max_read_dim; i++)
+    for (size_t i = new_min_read_dim; i < n_dims; i++)
     {
-        size_t j = new_max_read_dim - i;
-        if (data.sub_end_offset[j] != data.sub_start_offset[j])
+        if (data.sub_end_offset[i] != data.sub_start_offset[i])
         {
-            data.sub_read_length[j] = data.sub_end_offset[j] - data.sub_start_offset[j];
+            data.sub_read_length[i] = data.sub_end_offset[i] - data.sub_start_offset[i];
             dataspace.selectHyperslab(H5S_SELECT_SET, data.sub_read_length, data.sub_start_offset);
-            memspace= DataSpace(data.n_dims, data.sub_read_length, NULL);
+            memspace = DataSpace(n_dims, data.sub_read_length, NULL);
             read_by_type(altrep_info->type, data.dataset, dataspace, memspace, buffer_ptr + unit_size * buffer_read_length);
             buffer_read_length += dataspace.getSelectHyperNblocks();
-            data.sub_read_length[j] = 1;
-            data.sub_start_offset[j] = data.sub_end_offset[j];
+            data.sub_read_length[i] = 1;
+            data.sub_start_offset[i] = data.sub_end_offset[i];
         }
     }
     return buffer_read_length;
