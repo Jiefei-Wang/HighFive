@@ -21,7 +21,7 @@ H5_vector_reader::H5_vector_reader(H5std_string file_name, H5std_string dataset_
         sub_read_length.resize(n_dims);
         sub_start_offset.resize(n_dims);
         sub_end_offset.resize(n_dims);
-        length = dataspace.getSimpleExtentNpoints();
+        total_length = dataspace.getSimpleExtentNpoints();
     }
     catch (Exception &error)
     {
@@ -52,7 +52,7 @@ void H5_vector_reader::set_exception(bool value)
 }
 
 hsize_t H5_vector_reader::get_length(){
-    return length;
+    return total_length;
 }
 
 
@@ -156,7 +156,8 @@ static void move_by_one(hsize_vec& dims, hsize_vec& index, hsize_t moved_dim_ind
 
 size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size_t length)
 {
-    DataSpace memspace;
+    hsize_t mem_length =length;
+    DataSpace memspace(1, &mem_length, NULL);
     //Get the starting offset in the dataset
     compute_n_dim_offset(dims, sub_start_offset, offset, false);
     compute_n_dim_offset(dims, sub_end_offset, offset + length, false);
@@ -179,8 +180,10 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
         {
             sub_read_length[k] = dims[k] - sub_start_offset[k];
             dataspace.selectHyperslab(H5S_SELECT_SET, sub_read_length.data(), sub_start_offset.data());
-            memspace = DataSpace(n_dims, sub_read_length.data(), NULL);
-            read_by_type(type, dataset, dataspace, memspace, buffer_ptr + unit_size * buffer_read_length);
+            mem_length = dataspace.getSelectHyperNblocks();
+            hsize_t mem_offset = buffer_read_length;
+            memspace.selectHyperslab(H5S_SELECT_SET,&mem_length,&mem_offset);
+            read_by_type(type, dataset, dataspace, memspace, buffer_ptr);
             buffer_read_length += dataspace.getSelectHyperNblocks();
             sub_start_offset[k] = 0;
             //Move the offset in the higher dimension forward by 1, check if it is out-of-bound
@@ -205,8 +208,10 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
         {
             sub_read_length[i] = sub_end_offset[i] - sub_start_offset[i];
             dataspace.selectHyperslab(H5S_SELECT_SET, sub_read_length.data(), sub_start_offset.data());
-            memspace = DataSpace(n_dims, sub_read_length.data(), NULL);
-            read_by_type(type, dataset, dataspace, memspace, buffer_ptr + unit_size * buffer_read_length);
+            mem_length = dataspace.getSelectHyperNblocks();
+            hsize_t mem_offset = buffer_read_length;
+            memspace.selectHyperslab(H5S_SELECT_SET,&mem_length,&mem_offset);
+            read_by_type(type, dataset, dataspace, memspace, buffer_ptr);
             buffer_read_length += dataspace.getSelectHyperNblocks();
             sub_read_length[i] = 1;
             sub_start_offset[i] = sub_end_offset[i];

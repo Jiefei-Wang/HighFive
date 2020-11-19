@@ -16,7 +16,7 @@ private:
     H5::H5File file;
     H5::DataSet dataset;
     H5::DataSpace dataspace;
-    hsize_t length;
+    hsize_t total_length;
     hsize_t n_dims;
     std::vector<hsize_t> dims;
     std::vector<hsize_t> sub_start_offset;
