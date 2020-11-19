@@ -20,7 +20,7 @@ SEXP C_make_h5_altrep(int type, String file_name, String dataset_name)
     H5_vector_reader *h5_reader = new H5_vector_reader(file_name, dataset_name);
     SEXP extPtr = guard.protect(Travel_shared_ptr<H5_vector_reader>(h5_reader));
     Travel_altrep_info altrep_info;
-    altrep_info.length = h5_reader->length;
+    altrep_info.length = h5_reader->get_length();
     altrep_info.type = type;
     altrep_info.operations.get_region = h5_read_func;
     altrep_info.private_data = h5_reader;

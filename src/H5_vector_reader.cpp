@@ -5,6 +5,9 @@
 #include "utils.h"
 using namespace H5;
 
+typedef std::vector<hsize_t> hsize_vec;
+
+
 H5_vector_reader::H5_vector_reader(H5std_string file_name, H5std_string dataset_name)
 {
     try
@@ -13,17 +16,12 @@ H5_vector_reader::H5_vector_reader(H5std_string file_name, H5std_string dataset_
         dataset = file.openDataSet(dataset_name);
         dataspace = dataset.getSpace();
         n_dims = dataspace.getSimpleExtentNdims();
-        dims = new hsize_t[n_dims];
-        sub_read_length = new hsize_t[n_dims];
-        sub_start_offset = new hsize_t[n_dims];
-        sub_end_offset = new hsize_t[n_dims];
-        if (n_dims == 2)
-        {
-            sub_transposed_start_offset = new hsize_t[n_dims];
-            sub_transposed_end_offset = new hsize_t[n_dims];
-        }
+        dims.resize(n_dims);
+        dataspace.getSimpleExtentDims(dims.data());
+        sub_read_length.resize(n_dims);
+        sub_start_offset.resize(n_dims);
+        sub_end_offset.resize(n_dims);
         length = dataspace.getSimpleExtentNpoints();
-        dataspace.getSimpleExtentDims(dims);
     }
     catch (Exception &error)
     {
@@ -33,30 +31,6 @@ H5_vector_reader::H5_vector_reader(H5std_string file_name, H5std_string dataset_
 
 H5_vector_reader::~H5_vector_reader()
 {
-    if (dims != nullptr)
-    {
-        delete[] dims;
-    }
-    if (sub_start_offset != nullptr)
-    {
-        delete[] sub_start_offset;
-    }
-    if (sub_end_offset != nullptr)
-    {
-        delete[] sub_end_offset;
-    }
-    if (sub_transposed_start_offset != nullptr)
-    {
-        delete[] sub_transposed_start_offset;
-    }
-    if (sub_transposed_end_offset != nullptr)
-    {
-        delete[] sub_transposed_end_offset;
-    }
-    if (sub_read_length != nullptr)
-    {
-        delete[] sub_read_length;
-    }
 }
 
 void H5_vector_reader::set_transpose(bool value)
@@ -64,6 +38,8 @@ void H5_vector_reader::set_transpose(bool value)
     if (n_dims == 2)
     {
         transposed = value;
+        sub_transposed_start_offset.resize(n_dims);
+        sub_transposed_end_offset.resize(n_dims);
     }
     else
     {
@@ -74,6 +50,11 @@ void H5_vector_reader::set_exception(bool value)
 {
     throw_exception = value;
 }
+
+hsize_t H5_vector_reader::get_length(){
+    return length;
+}
+
 
 size_t H5_vector_reader::read(int type, void *buffer, size_t offset, size_t length)
 {
@@ -117,12 +98,13 @@ static void read_by_type(int type, DataSet &dataset, DataSpace &dataspace, DataS
 }
 
 //Get the n-dimensional offset of the subset from the 1-dimensional offset
-static void compute_n_dim_offset(hsize_t n_dims, hsize_t *dims, hsize_t *n_offset, hsize_t offset, bool transpose)
+static void compute_n_dim_offset(hsize_vec& dims, hsize_vec& n_offset, hsize_t offset, bool transpose)
 {
+    size_t n_dims = dims.size();
     hsize_t length_rest = offset;
-    for (hsize_t i = 0; i < n_dims; i++)
+    for (size_t i = 0; i < n_dims; i++)
     {
-        hsize_t j = transpose ? i : (n_dims - 1 - i);
+        size_t j = transpose ? i : (n_dims - 1 - i);
         n_offset[j] = length_rest % dims[j];
         length_rest = length_rest / dims[j];
     }
@@ -141,9 +123,10 @@ static void compute_n_dim_offset(hsize_t n_dims, hsize_t *dims, hsize_t *n_offse
     }
 }
 
-static hsize_t get_min_read_dimension(hsize_t n_dims, hsize_t *start_off, hsize_t *end_off)
+static hsize_t get_min_read_dimension(hsize_vec& start_off, hsize_vec& end_off)
 {
-    for (hsize_t i = 0; i < n_dims; i++)
+    size_t n_dims = start_off.size();
+    for (size_t i = 0; i < n_dims; i++)
     {
         if (start_off[i] != end_off[i])
         {
@@ -154,7 +137,7 @@ static hsize_t get_min_read_dimension(hsize_t n_dims, hsize_t *start_off, hsize_
 }
 //Move the index by one unit in along a specific dimension
 //If the index is out-off-bound, add 1 to the next dimension
-static void move_by_one(hsize_t *dims, hsize_t *index, hsize_t moved_dim_index)
+static void move_by_one(hsize_vec& dims, hsize_vec& index, hsize_t moved_dim_index)
 {
     ++index[moved_dim_index];
     for (size_t j = moved_dim_index; j != 0; j--)
@@ -175,9 +158,9 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
 {
     DataSpace memspace;
     //Get the starting offset in the dataset
-    compute_n_dim_offset(n_dims, dims, sub_start_offset, offset, false);
-    compute_n_dim_offset(n_dims, dims, sub_end_offset, offset + length, false);
-    size_t min_read_dim = get_min_read_dimension(n_dims, sub_start_offset, sub_end_offset);
+    compute_n_dim_offset(dims, sub_start_offset, offset, false);
+    compute_n_dim_offset(dims, sub_end_offset, offset + length, false);
+    size_t min_read_dim = get_min_read_dimension(sub_start_offset, sub_end_offset);
     //Initialize the subset size
     for (size_t i = 0; i < n_dims; i++)
     {
@@ -195,8 +178,8 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
         if (sub_start_offset[k] != 0)
         {
             sub_read_length[k] = dims[k] - sub_start_offset[k];
-            dataspace.selectHyperslab(H5S_SELECT_SET, sub_read_length, sub_start_offset);
-            memspace = DataSpace(n_dims, sub_read_length, NULL);
+            dataspace.selectHyperslab(H5S_SELECT_SET, sub_read_length.data(), sub_start_offset.data());
+            memspace = DataSpace(n_dims, sub_read_length.data(), NULL);
             read_by_type(type, dataset, dataspace, memspace, buffer_ptr + unit_size * buffer_read_length);
             buffer_read_length += dataspace.getSelectHyperNblocks();
             sub_start_offset[k] = 0;
@@ -209,7 +192,7 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
     size_t new_min_read_dim = 0;
     if (min_read_dim != 0)
     {
-        new_min_read_dim = get_min_read_dimension(n_dims, sub_start_offset, sub_end_offset);
+        new_min_read_dim = get_min_read_dimension(sub_start_offset, sub_end_offset);
         //Reset the read length for the dimensions that are not required
         for (size_t i = min_read_dim; i < new_min_read_dim; i++)
         {
@@ -221,8 +204,8 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
         if (sub_end_offset[i] != sub_start_offset[i])
         {
             sub_read_length[i] = sub_end_offset[i] - sub_start_offset[i];
-            dataspace.selectHyperslab(H5S_SELECT_SET, sub_read_length, sub_start_offset);
-            memspace = DataSpace(n_dims, sub_read_length, NULL);
+            dataspace.selectHyperslab(H5S_SELECT_SET, sub_read_length.data(), sub_start_offset.data());
+            memspace = DataSpace(n_dims, sub_read_length.data(), NULL);
             read_by_type(type, dataset, dataspace, memspace, buffer_ptr + unit_size * buffer_read_length);
             buffer_read_length += dataspace.getSelectHyperNblocks();
             sub_read_length[i] = 1;
@@ -237,8 +220,8 @@ size_t H5_vector_reader::read_transposed(int type, void *buffer, size_t offset, 
 {
     uint8_t type_size = get_type_size(type);
     //Get the starting offset in the dataset
-    compute_n_dim_offset(n_dims, dims, sub_transposed_start_offset, offset, true);
-    compute_n_dim_offset(n_dims, dims, sub_transposed_end_offset, offset + length, true);
+    compute_n_dim_offset(dims, sub_transposed_start_offset, offset, true);
+    compute_n_dim_offset(dims, sub_transposed_end_offset, offset + length, true);
     hsize_t max_buffer_length = sub_transposed_end_offset[1] - sub_transposed_start_offset[1] + 1;
     transpose_buffer.reserve(type_size * max_buffer_length);
     char *transpose_buffer_ptr = transpose_buffer.get();
