@@ -7,7 +7,6 @@ using namespace H5;
 
 typedef std::vector<hsize_t> hsize_vec;
 
-
 H5_vector_reader::H5_vector_reader(H5std_string file_name, H5std_string dataset_name)
 {
     try
@@ -29,17 +28,16 @@ H5_vector_reader::H5_vector_reader(H5std_string file_name, H5std_string dataset_
     }
 }
 
-H5_vector_reader::~H5_vector_reader()
-{
-}
-
 void H5_vector_reader::set_transpose(bool value)
 {
     if (n_dims == 2)
     {
         transposed = value;
-        sub_transposed_start_offset.resize(n_dims);
-        sub_transposed_end_offset.resize(n_dims);
+        if (transposed)
+        {
+            sub_transposed_start_offset.resize(n_dims);
+            sub_transposed_end_offset.resize(n_dims);
+        }
     }
     else
     {
@@ -51,10 +49,34 @@ void H5_vector_reader::set_exception(bool value)
     throw_exception = value;
 }
 
-hsize_t H5_vector_reader::get_length(){
+hsize_t H5_vector_reader::get_length()
+{
     return total_length;
 }
 
+int H5_vector_reader::get_suggested_type()
+{
+    int suggested_type;
+    H5T_class_t data_type = dataset.getDataType().getClass();
+    if (data_type == H5T_INTEGER)
+    {
+        suggested_type = INTSXP;
+    }
+    else
+    {
+        suggested_type = REALSXP;
+    }
+    return suggested_type;
+}
+hsize_t H5_vector_reader::get_n_dims()
+{
+    return n_dims;
+}
+
+hsize_t H5_vector_reader::get_dim(size_t i)
+{
+    return dims.at(i);
+}
 
 size_t H5_vector_reader::read(int type, void *buffer, size_t offset, size_t length)
 {
@@ -92,13 +114,19 @@ static void read_by_type(int type, DataSet &dataset, DataSpace &dataspace, DataS
     case REALSXP:
         dataset.read(buffer, PredType::NATIVE_DOUBLE, memspace, dataspace);
         break;
+    case RAWSXP:
+        dataset.read(buffer, PredType::NATIVE_INT8, memspace, dataspace);
+        break;
+    case LGLSXP:
+        dataset.read(buffer, PredType::NATIVE_INT, memspace, dataspace);
+        break;
     default:
         break;
     }
 }
 
 //Get the n-dimensional offset of the subset from the 1-dimensional offset
-static void compute_n_dim_offset(hsize_vec& dims, hsize_vec& n_offset, hsize_t offset, bool transpose)
+static void compute_n_dim_offset(hsize_vec &dims, hsize_vec &n_offset, hsize_t offset, bool transpose)
 {
     size_t n_dims = dims.size();
     hsize_t length_rest = offset;
@@ -123,7 +151,7 @@ static void compute_n_dim_offset(hsize_vec& dims, hsize_vec& n_offset, hsize_t o
     }
 }
 
-static hsize_t get_min_read_dimension(hsize_vec& start_off, hsize_vec& end_off)
+static hsize_t get_min_read_dimension(hsize_vec &start_off, hsize_vec &end_off)
 {
     size_t n_dims = start_off.size();
     for (size_t i = 0; i < n_dims; i++)
@@ -137,7 +165,7 @@ static hsize_t get_min_read_dimension(hsize_vec& start_off, hsize_vec& end_off)
 }
 //Move the index by one unit in along a specific dimension
 //If the index is out-off-bound, add 1 to the next dimension
-static void move_by_one(hsize_vec& dims, hsize_vec& index, hsize_t moved_dim_index)
+static void move_by_one(hsize_vec &dims, hsize_vec &index, hsize_t moved_dim_index)
 {
     ++index[moved_dim_index];
     for (size_t j = moved_dim_index; j != 0; j--)
@@ -157,7 +185,7 @@ static void move_by_one(hsize_vec& dims, hsize_vec& index, hsize_t moved_dim_ind
 size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size_t length)
 {
     //Initial the memory space and the data space
-    hsize_t mem_length =length;
+    hsize_t mem_length = length;
     DataSpace memspace(1, &mem_length, NULL);
     dataspace.selectNone();
     //Get the starting offset in the dataset
@@ -169,7 +197,7 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
     {
         sub_read_length[i] = 1;
     }
-    size_t buffer_read_length = 0; 
+    size_t buffer_read_length = 0;
     //We select the marginal data first
     //The marginal data is the data that cannot be read by block
     for (size_t i = min_read_dim + 1; i < n_dims; i++)
@@ -241,5 +269,6 @@ size_t H5_vector_reader::read_transposed(int type, void *buffer, size_t offset, 
             }
         }
     }
+    transpose_buffer.release();
     return length;
 }

@@ -7,11 +7,13 @@ class H5_vector_reader
 {
 public:
     H5_vector_reader(H5std_string file_name, H5std_string dataset_name);
-    ~H5_vector_reader();
     void set_transpose(bool value);
     size_t read(int type, void *buffer, size_t offset, size_t length);
     void set_exception(bool value);
     hsize_t get_length();
+    int get_suggested_type();
+    hsize_t get_n_dims();
+    hsize_t get_dim(size_t i);
 private:
     H5::H5File file;
     H5::DataSet dataset;
