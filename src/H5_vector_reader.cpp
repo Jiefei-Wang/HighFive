@@ -156,8 +156,10 @@ static void move_by_one(hsize_vec& dims, hsize_vec& index, hsize_t moved_dim_ind
 
 size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size_t length)
 {
+    //Initial the memory space and the data space
     hsize_t mem_length =length;
     DataSpace memspace(1, &mem_length, NULL);
+    dataspace.selectNone();
     //Get the starting offset in the dataset
     compute_n_dim_offset(dims, sub_start_offset, offset, false);
     compute_n_dim_offset(dims, sub_end_offset, offset + length, false);
@@ -167,10 +169,9 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
     {
         sub_read_length[i] = 1;
     }
-    size_t buffer_read_length = 0; //We must read the marginal data first
+    size_t buffer_read_length = 0; 
+    //We select the marginal data first
     //The marginal data is the data that cannot be read by block
-    uint8_t unit_size = get_type_size(type);
-    char *buffer_ptr = (char *)buffer;
     for (size_t i = min_read_dim + 1; i < n_dims; i++)
     {
         hsize_t k = n_dims - i + min_read_dim;
@@ -179,12 +180,7 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
         if (sub_start_offset[k] != 0)
         {
             sub_read_length[k] = dims[k] - sub_start_offset[k];
-            dataspace.selectHyperslab(H5S_SELECT_SET, sub_read_length.data(), sub_start_offset.data());
-            mem_length = dataspace.getSelectHyperNblocks();
-            hsize_t mem_offset = buffer_read_length;
-            memspace.selectHyperslab(H5S_SELECT_SET,&mem_length,&mem_offset);
-            read_by_type(type, dataset, dataspace, memspace, buffer_ptr);
-            buffer_read_length += dataspace.getSelectHyperNblocks();
+            dataspace.selectHyperslab(H5S_SELECT_OR, sub_read_length.data(), sub_start_offset.data());
             sub_start_offset[k] = 0;
             //Move the offset in the higher dimension forward by 1, check if it is out-of-bound
             move_by_one(dims, sub_start_offset, k - 1);
@@ -207,17 +203,14 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
         if (sub_end_offset[i] != sub_start_offset[i])
         {
             sub_read_length[i] = sub_end_offset[i] - sub_start_offset[i];
-            dataspace.selectHyperslab(H5S_SELECT_SET, sub_read_length.data(), sub_start_offset.data());
-            mem_length = dataspace.getSelectHyperNblocks();
-            hsize_t mem_offset = buffer_read_length;
-            memspace.selectHyperslab(H5S_SELECT_SET,&mem_length,&mem_offset);
-            read_by_type(type, dataset, dataspace, memspace, buffer_ptr);
+            dataspace.selectHyperslab(H5S_SELECT_OR, sub_read_length.data(), sub_start_offset.data());
             buffer_read_length += dataspace.getSelectHyperNblocks();
             sub_read_length[i] = 1;
             sub_start_offset[i] = sub_end_offset[i];
         }
     }
-    return buffer_read_length;
+    read_by_type(type, dataset, dataspace, memspace, buffer);
+    return length;
 }
 
 static Unique_buffer transpose_buffer;
