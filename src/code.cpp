@@ -3,6 +3,7 @@
 #include "H5Cpp.h"
 #include "utils.h"
 #include "H5_vector_reader.h"
+#include "hdf5_hl.h"
 
 using namespace Rcpp;
 using namespace H5;
@@ -52,7 +53,40 @@ SEXP get_dims(String file_name, String dataset_name)
     SEXP x = guard.protect(Rf_allocVector(REALSXP, n_dims));
     for (size_t i = 0; i < n_dims; i++)
     {
-        SET_REAL_ELT(x, n_dims-i-1, h5_reader.get_dim(i));
+        SET_REAL_ELT(x, n_dims - i - 1, h5_reader.get_dim(i));
     }
     return x;
+}
+
+// [[Rcpp::export]]
+SEXP test(String file_name, String table_name)
+{
+    std::string file_name_s = file_name;
+    H5File file = H5File(file_name_s, H5F_ACC_RDONLY);
+    hsize_t n_field;
+    hsize_t n_record;
+    herr_t error = H5TBget_table_info(file.getId(), table_name.get_cstring(), &n_field, &n_record);
+    char **names_out = new char*[n_field];
+    for (hsize_t i = 0; i < n_field; i++)
+    {
+        names_out[i] = new char[255];
+    }
+    std::vector<size_t> field_sizes;
+    field_sizes.resize(n_field);
+    std::vector<size_t> offset_out;
+    offset_out.resize(n_field);
+    size_t type_size;
+    H5TBget_field_info(file.getId(), table_name.get_cstring(),
+                       names_out, field_sizes.data(), offset_out.data(), &type_size);
+    CharacterVector names(n_field);
+    for (hsize_t i = 0; i < n_field; i++)
+    {
+        names[i]=names_out[i];
+    }
+    for (hsize_t i = 0; i < n_field; i++)
+    {
+        delete[] names_out[i];
+    }
+    delete[] names_out;
+    return names;
 }

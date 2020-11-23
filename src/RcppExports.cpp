@@ -59,12 +59,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test
+SEXP test(String file_name, String table_name);
+RcppExport SEXP _HighFive_test(SEXP file_nameSEXP, SEXP table_nameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< String >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< String >::type table_name(table_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(test(file_name, table_name));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_HighFive_C_make_h5_altrep", (DL_FUNC) &_HighFive_C_make_h5_altrep, 5},
     {"_HighFive_C_read_h5_altrep", (DL_FUNC) &_HighFive_C_read_h5_altrep, 6},
     {"_HighFive_get_type_index", (DL_FUNC) &_HighFive_get_type_index, 1},
     {"_HighFive_get_dims", (DL_FUNC) &_HighFive_get_dims, 2},
+    {"_HighFive_test", (DL_FUNC) &_HighFive_test, 2},
     {NULL, NULL, 0}
 };
 

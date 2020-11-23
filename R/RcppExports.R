@@ -17,3 +17,7 @@ get_dims <- function(file_name, dataset_name) {
     .Call(`_HighFive_get_dims`, file_name, dataset_name)
 }
 
+test <- function(file_name, table_name) {
+    .Call(`_HighFive_test`, file_name, table_name)
+}
+

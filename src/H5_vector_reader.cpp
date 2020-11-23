@@ -56,17 +56,16 @@ hsize_t H5_vector_reader::get_length()
 
 int H5_vector_reader::get_suggested_type()
 {
-    int suggested_type;
     H5T_class_t data_type = dataset.getDataType().getClass();
     if (data_type == H5T_INTEGER)
     {
-        suggested_type = INTSXP;
+        return INTSXP;
     }
-    else
-    {
-        suggested_type = REALSXP;
+    if(data_type == H5T_FLOAT){
+        return REALSXP;
     }
-    return suggested_type;
+    Rf_error("unknown type");
+    return 0;
 }
 hsize_t H5_vector_reader::get_n_dims()
 {
