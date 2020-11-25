@@ -1,3 +1,6 @@
+#ifndef HEADER_UTILS
+#define HEADER_UTILS
+
 #include <stdint.h>
 
 #ifdef Rcpp_hpp
@@ -61,3 +64,5 @@ public:
     return ptr.get();
   }
 };
+
+#endif

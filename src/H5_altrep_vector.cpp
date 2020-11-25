@@ -16,7 +16,7 @@ size_t h5_read_func(const Travel_altrep_info *altrep_info, void *buffer,
 }
 
 // [[Rcpp::export]]
-SEXP C_make_h5_altrep(String file_name, String dataset_name, int type = 0, bool transpose = false, SEXP attributes = R_NilValue)
+SEXP C_make_h5_altrep_vector(String file_name, String dataset_name, int type = 0, bool transpose = false, SEXP attributes = R_NilValue)
 {
     PROTECT_GUARD guard;
     H5_vector_reader *h5_reader = new H5_vector_reader(file_name, dataset_name);

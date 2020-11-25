@@ -1,4 +1,3 @@
-#include <string>
 #include <Rcpp.h>
 #include "H5Cpp.h"
 #include "utils.h"
@@ -61,8 +60,7 @@ SEXP get_dims(String file_name, String dataset_name)
 // [[Rcpp::export]]
 SEXP test(String file_name, String table_name)
 {
-    std::string file_name_s = file_name;
-    H5File file = H5File(file_name_s, H5F_ACC_RDONLY);
+    H5File file = H5File(file_name, H5F_ACC_RDONLY);
     hsize_t n_field;
     hsize_t n_record;
     herr_t error = H5TBget_table_info(file.getId(), table_name.get_cstring(), &n_field, &n_record);

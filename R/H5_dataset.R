@@ -14,7 +14,7 @@ h5Dataset<-function(file, name, type = c("auto", "integer", "numeric"),
         data_attributes <- pairlist(dim = as.integer(dims))
     }
     
-    x <- C_make_h5_altrep(file_name = file,
+    x <- C_make_h5_altrep_vector(file_name = file,
                      dataset_name = name, 
                      type = type_index,
                      transpose = transpose,
