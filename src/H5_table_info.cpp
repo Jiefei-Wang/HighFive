@@ -73,7 +73,8 @@ H5_table_info::H5_table_info(H5std_string file_name, H5std_string table_name) : 
         field_names.reserve(n_field);
         for (hsize_t i = 0; i < n_field; i++)
         {
-            field_names[i] = names_out[i];
+            std::string cur_name(names_out[i]);
+            field_names.push_back(cur_name);
         }
         for (hsize_t i = 0; i < n_field; i++)
         {
