@@ -4,6 +4,9 @@
 #include "H5_utils.h"
 #include "utils.h"
 
+H5_table_reader::H5_table_reader(H5std_string file_name, H5std_string table_name, int field_index):table_info(file_name,table_name),field_index(field_index){
+}
+
 size_t H5_table_reader::read(int R_type, void *buffer, size_t offset, size_t length)
 {
     void *internal_buffer = nullptr;
@@ -34,4 +37,12 @@ size_t H5_table_reader::read(int R_type, void *buffer, size_t offset, size_t len
         delete[] (char*)internal_buffer;
     }
     return length;
+}
+size_t H5_table_reader::get_length(){
+        return table_info.n_record;
+}
+
+int H5_table_reader::get_suggested_type(){
+    H5T_class_t H5_class = table_info.field_info.elt_H5_types[field_index].getClass();
+    return get_H5_R_suggested_type(H5_class);
 }

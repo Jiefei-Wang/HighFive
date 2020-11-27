@@ -6,6 +6,18 @@
 
 using namespace Rcpp;
 
+// C_make_h5_altrep_table
+SEXP C_make_h5_altrep_table(String file_name, String table_name);
+RcppExport SEXP _HighFive_C_make_h5_altrep_table(SEXP file_nameSEXP, SEXP table_nameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< String >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< String >::type table_name(table_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_make_h5_altrep_table(file_name, table_name));
+    return rcpp_result_gen;
+END_RCPP
+}
 // C_make_h5_altrep_vector
 SEXP C_make_h5_altrep_vector(String file_name, String dataset_name, int type, bool transpose, SEXP attributes);
 RcppExport SEXP _HighFive_C_make_h5_altrep_vector(SEXP file_nameSEXP, SEXP dataset_nameSEXP, SEXP typeSEXP, SEXP transposeSEXP, SEXP attributesSEXP) {
@@ -123,6 +135,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_HighFive_C_make_h5_altrep_table", (DL_FUNC) &_HighFive_C_make_h5_altrep_table, 2},
     {"_HighFive_C_make_h5_altrep_vector", (DL_FUNC) &_HighFive_C_make_h5_altrep_vector, 5},
     {"_HighFive_C_H5open", (DL_FUNC) &_HighFive_C_H5open, 2},
     {"_HighFive_C_H5Dopen", (DL_FUNC) &_HighFive_C_H5Dopen, 2},

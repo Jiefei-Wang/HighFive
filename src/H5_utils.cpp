@@ -60,3 +60,17 @@ H5::PredType get_H5_type_id(int R_type){
 	}
 	return H5::PredType::NATIVE_INT8;
 }
+
+
+int get_H5_R_suggested_type(H5T_class_t& H5_type)
+{
+    if (H5_type == H5T_INTEGER)
+    {
+        return INTSXP;
+    }
+    if(H5_type == H5T_FLOAT){
+        return REALSXP;
+    }
+    Rf_error("unknown type");
+    return 0;
+}

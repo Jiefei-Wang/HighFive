@@ -3,6 +3,8 @@
 #include "H5_vector_reader.h"
 #define UTILS_ENABLE_R
 #include "utils.h"
+#include "H5_utils.h"
+
 using namespace H5;
 
 typedef std::vector<hsize_t> hsize_vec;
@@ -57,15 +59,7 @@ hsize_t H5_vector_reader::get_length()
 int H5_vector_reader::get_suggested_type()
 {
     H5T_class_t data_type = dataset.getDataType().getClass();
-    if (data_type == H5T_INTEGER)
-    {
-        return INTSXP;
-    }
-    if(data_type == H5T_FLOAT){
-        return REALSXP;
-    }
-    Rf_error("unknown type");
-    return 0;
+    return get_H5_R_suggested_type(data_type);
 }
 hsize_t H5_vector_reader::get_n_dims()
 {
