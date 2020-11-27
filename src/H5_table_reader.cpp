@@ -25,9 +25,9 @@ size_t H5_table_reader::read(int R_type, void *buffer, size_t offset, size_t len
                           0,
                           &H5_elt_size,
                           internal_buffer);
-    H5::DataType &type = table_info.field_info.elt_H5_types[field_index];
-    hid_t H5_type = get_H5_type_id(R_type);
-    type.convert(H5_type, length, internal_buffer, NULL);
+    H5::DataType &data_type = table_info.field_info.elt_H5_types[field_index];
+    H5::PredType H5_type = get_H5_type_id(R_type);
+    data_type.convert(H5_type, length, internal_buffer, NULL);
     if (internal_buffer != buffer)
     {
         memcpy(buffer, internal_buffer, R_elt_size * length);
