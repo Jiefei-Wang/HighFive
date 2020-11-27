@@ -17,13 +17,14 @@ size_t H5_table_reader::read(int R_type, void *buffer, size_t offset, size_t len
     {
         internal_buffer = buffer;
     }
-    size_t field_offset = 0;
     H5TBread_fields_index(table_info.file.getId(),
                           table_info.table_name.c_str(),
-                          1, &field_index, field_offset, length, table_info.compound_size,
-                          &offset,
+                          1, &field_index, 
+                          offset, length, 
+                          H5_elt_size,
+                          0,
                           &H5_elt_size,
-                          buffer);
+                          internal_buffer);
     H5::DataType &type = table_info.field_info.elt_H5_types[field_index];
     hid_t H5_type = get_H5_type_id(R_type);
     type.convert(H5_type, length, internal_buffer, NULL);

@@ -70,7 +70,6 @@ H5_table_info::H5_table_info(H5std_string file_name, H5std_string table_name) : 
         }
         size_t* field_sizes = new size_t[n_field];
         size_t* field_offsets = new size_t[n_field];
-        size_t compound_size;
         H5TBget_field_info(file.getId(), table_name.c_str(),
                            names_out, field_sizes, field_offsets, &compound_size);
         field_names.reserve(n_field);
