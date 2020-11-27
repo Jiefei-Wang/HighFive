@@ -2,6 +2,7 @@
 #include "H5Cpp.h"
 #include "utils.h"
 #include "H5_vector_reader.h"
+#include "H5_table_reader.h"
 #include "hdf5_hl.h"
 
 using namespace Rcpp;
@@ -87,4 +88,14 @@ SEXP test(String file_name, String table_name)
     }
     delete[] names_out;
     return names;
+}
+
+// [[Rcpp::export]]
+SEXP test_table_read(int type, String file_name, String table_name, int field_index){
+    H5_table_info table_info(file_name,table_name);
+    H5_table_reader reader(table_info,field_index);
+    PROTECT_GUARD guard;
+    SEXP x = guard.protect(Rf_allocVector(type,table_info.n_record));
+    reader.read(type,DATAPTR(x),0,table_info.n_record);
+    return x;
 }

@@ -243,7 +243,7 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
 static Unique_buffer transpose_buffer;
 size_t H5_vector_reader::read_transposed(int type, void *buffer, size_t offset, size_t length)
 {
-    uint8_t type_size = get_type_size(type);
+    uint8_t type_size = get_R_type_size(type);
     //Get the starting offset in the dataset
     compute_n_dim_offset(dims, sub_transposed_start_offset, offset, true);
     compute_n_dim_offset(dims, sub_transposed_end_offset, offset + length, true);

@@ -9,6 +9,7 @@
 struct H5_table_field_info{
     //If is_compound = false, element type size and offset are length 1 vector
     bool is_compound;
+    std::vector<H5::DataType> elt_H5_types; 
     std::vector<std::string> elt_types;
     std::vector<size_t> elt_sizes;
     std::vector<size_t> elt_offsets;
@@ -23,6 +24,7 @@ public:
     H5::H5File file;
     H5::DataSet dataset;
     H5std_string table_name;
+    size_t compound_size;
     hsize_t n_field;
     hsize_t n_record;
     H5_table_field_info field_info;

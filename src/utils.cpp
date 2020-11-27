@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <Rcpp.h>
-uint8_t get_type_size(int type)
+uint8_t get_R_type_size(int type)
 {
 	uint8_t elt_size = 0;
 	switch (type)

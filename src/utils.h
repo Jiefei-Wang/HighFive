@@ -34,7 +34,7 @@ public:
 };
 #endif
 
-uint8_t get_type_size(int type);
+uint8_t get_R_type_size(int type);
 
 
 

@@ -6,6 +6,6 @@
 #include "H5Cpp.h"
 
 std::string get_H5_type_class(H5::DataType& data_type);
-
+hid_t get_H5_type_id(int R_type);
 
 #endif

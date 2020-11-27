@@ -23,6 +23,7 @@ H5_table_field_info get_type_details(H5::CompType &type)
         info.elt_types[i] = elt_class;
         info.elt_sizes[i] = elt_type.getSize();
         info.elt_offsets[i] = type.getMemberOffset(i);
+        info.elt_H5_types[i] = elt_type;
         if (elt_class == "COMPOUND"){
             CompType elt_compType = type.getMemberCompType(i);
             H5_table_field_info elt_type_info = get_type_details(elt_compType);
@@ -40,9 +41,10 @@ H5_table_field_info get_type_details(H5::DataSet &dataSet)
     {
         H5_table_field_info info;
         info.is_compound = false;
-        info.elt_sizes[0] = dataSet_type.getSize();
-        info.elt_offsets[0] = 0;
-        info.elt_types[0] = type;
+        info.elt_sizes.push_back(dataSet_type.getSize());
+        info.elt_offsets.push_back(0);
+        info.elt_types.push_back(type);
+        info.elt_H5_types.push_back(dataSet_type);
         return info;
     }
     else
@@ -67,9 +69,9 @@ H5_table_info::H5_table_info(H5std_string file_name, H5std_string table_name) : 
         }
         size_t* field_sizes = new size_t[n_field];
         size_t* field_offsets = new size_t[n_field];
-        size_t compound_element_size;
+        size_t compound_size;
         H5TBget_field_info(file.getId(), table_name.c_str(),
-                           names_out, field_sizes, field_offsets, &compound_element_size);
+                           names_out, field_sizes, field_offsets, &compound_size);
         field_names.reserve(n_field);
         for (hsize_t i = 0; i < n_field; i++)
         {

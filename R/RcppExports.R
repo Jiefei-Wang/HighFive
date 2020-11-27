@@ -33,3 +33,7 @@ test <- function(file_name, table_name) {
     .Call(`_HighFive_test`, file_name, table_name)
 }
 
+test_table_read <- function(type, file_name, table_name, field_index) {
+    .Call(`_HighFive_test_table_read`, type, file_name, table_name, field_index)
+}
+

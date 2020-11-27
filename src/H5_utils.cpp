@@ -43,3 +43,24 @@ std::string get_H5_type_class(H5::DataType& data_type){
     }
 }
 
+hid_t get_H5_type_id(int R_type){
+    hid_t H5_type = 0;
+	switch (R_type)
+	{
+	case INTSXP:
+		H5_type = H5T_NATIVE_INT;
+		break;
+	case LGLSXP:
+		H5_type = H5T_NATIVE_INT;
+		break;
+	case REALSXP:
+		H5_type = H5T_NATIVE_DOUBLE;
+		break;
+	case RAWSXP:
+		H5_type = H5T_NATIVE_CHAR;
+		break;
+	default:
+		assert(!"Unknown type");
+	}
+	return H5_type;
+}
