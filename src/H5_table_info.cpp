@@ -16,6 +16,7 @@ H5_table_field_info get_type_details(H5::CompType &type)
     info.elt_types.resize(n_numbers);
     info.elt_sizes.resize(n_numbers);
     info.elt_offsets.resize(n_numbers);
+    info.elt_H5_types.resize(n_numbers);
     for (int i = 0; i < n_numbers; i++)
     {
         DataType elt_type = type.getMemberDataType(i);
