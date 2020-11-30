@@ -14,7 +14,7 @@ Compound_info::Compound_info(H5::CompType &type) : type(type)
         elt_names.push_back(type.getMemberName(i));
         if (elt_type.getClass() == H5T_COMPOUND)
         {
-            H5::CompType elt_type=type.getMemberCompType(i);
+            H5::CompType elt_type = type.getMemberCompType(i);
             H5_type_info elt_type_info(elt_type);
             elt_types.push_back(elt_type_info);
         }
@@ -30,7 +30,7 @@ Simple_info::Simple_info(H5::DataType &type) : type(type)
 {
 }
 
-H5T_class_t H5_type_info::get_type_class()
+H5T_class_t H5_type_info::get_type_class() const
 {
     return type_class;
 }
@@ -81,6 +81,15 @@ void H5_type_info::init(H5::DataType &type)
     type_size = type.getSize();
     type_class = type.getClass();
 }
+H5_type_info::H5_type_info(const H5_type_info &t)
+{
+    copy(t);
+}
+H5_type_info &H5_type_info::operator=(const H5_type_info &t)
+{
+    copy(t);
+    return *this;
+}
 
 H5_type_info::~H5_type_info()
 {
@@ -98,11 +107,11 @@ H5_type_info::~H5_type_info()
     }
 }
 
-size_t H5_type_info::get_type_size()
+size_t H5_type_info::get_type_size() const
 {
     return type_size;
 }
-Compound_info &H5_type_info::get_compound_info()
+Compound_info &H5_type_info::get_compound_info() const
 {
     if (get_type_class() != H5T_COMPOUND)
     {
@@ -110,11 +119,26 @@ Compound_info &H5_type_info::get_compound_info()
     }
     return *(Compound_info *)type_object_ptr;
 }
-Simple_info &H5_type_info::get_simple_info()
+Simple_info &H5_type_info::get_simple_info() const
 {
     if (get_type_class() == H5T_COMPOUND)
     {
         throw Rcpp::exception("The data is not of simple type!");
     }
     return *(Simple_info *)type_object_ptr;
+}
+
+void H5_type_info::copy(const H5_type_info &t)
+{
+    type_size = t.type_size;
+    type_class = t.type_class;
+    switch (type_class)
+    {
+    case H5T_COMPOUND:
+        type_object_ptr = new Compound_info(t.get_compound_info());
+        break;
+    default:
+        type_object_ptr = new Simple_info(t.get_simple_info());
+        break;
+    }
 }
