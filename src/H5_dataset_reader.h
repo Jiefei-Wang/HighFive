@@ -3,10 +3,10 @@
 #include "H5Cpp.h"
 #include <vector>
 
-class H5_vector_reader
+class H5_dataset_reader
 {
 public:
-    H5_vector_reader(H5std_string file_name, H5std_string dataset_name);
+    H5_dataset_reader(H5std_string file_name, H5std_string dataset_name);
     void set_transpose(bool value);
     size_t read(int type, void *buffer, size_t offset, size_t length);
     void set_exception(bool value);
@@ -28,6 +28,7 @@ private:
     std::vector<hsize_t> sub_transposed_end_offset;
     bool transposed = false;
     bool throw_exception = false;
+    void select_dataspace(size_t offset, size_t length);
     size_t read_native(int type, void *buffer, size_t offset, size_t length);
     size_t read_transposed(int type, void *buffer, size_t offset, size_t length);
 };

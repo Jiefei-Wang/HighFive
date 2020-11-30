@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include "H5Cpp.h"
 #include "utils.h"
-#include "H5_vector_reader.h"
+#include "H5_dataset_reader.h"
 #include "H5_table_reader.h"
 #include "hdf5_hl.h"
 
@@ -12,7 +12,7 @@ using namespace H5;
 SEXP C_read_h5_altrep(String file_name, String dataset_name, size_t offset, size_t length, bool trans = false, int type = 0)
 {
     PROTECT_GUARD guard;
-    H5_vector_reader h5_reader(file_name, dataset_name);
+    H5_dataset_reader h5_reader(file_name, dataset_name);
     int R_type = type == 0 ? h5_reader.get_suggested_type() : type;
     h5_reader.set_transpose(trans);
     h5_reader.set_exception(true);
@@ -47,7 +47,7 @@ int get_type_index(String type_name)
 // [[Rcpp::export]]
 SEXP get_dims(String file_name, String dataset_name)
 {
-    H5_vector_reader h5_reader(file_name, dataset_name);
+    H5_dataset_reader h5_reader(file_name, dataset_name);
     PROTECT_GUARD guard;
     size_t n_dims = h5_reader.get_n_dims();
     SEXP x = guard.protect(Rf_allocVector(REALSXP, n_dims));
@@ -98,4 +98,17 @@ SEXP test_table_read(int type, String file_name, String table_name, int field_in
     SEXP x = guard.protect(Rf_allocVector(type,table_info.n_record));
     reader.read(type,DATAPTR(x),0,table_info.n_record);
     return x;
+}
+
+
+#include "H5_dataset_info.h"
+//[[Rcpp::export]]
+void test1(String file_name, String table_name){
+    H5_dataset_info info(file_name,table_name);
+    if(info.type_info.get_type_id()==H5T_COMPOUND){
+        Compound_info& cmp_type = info.type_info.get_compound_info();
+        for(auto i: cmp_type.elt_names){
+            Rprintf("Type name:%s\n", i.c_str());
+        }
+    }
 }

@@ -1,6 +1,6 @@
 #include <Rcpp.h>
 #include "H5Cpp.h"
-#include "H5_vector_reader.h"
+#include "H5_dataset_reader.h"
 #define UTILS_ENABLE_R
 #include "utils.h"
 #include "H5_utils.h"
@@ -9,7 +9,7 @@ using namespace H5;
 
 typedef std::vector<hsize_t> hsize_vec;
 
-H5_vector_reader::H5_vector_reader(H5std_string file_name, H5std_string dataset_name)
+H5_dataset_reader::H5_dataset_reader(H5std_string file_name, H5std_string dataset_name)
 {
     try
     {
@@ -30,7 +30,7 @@ H5_vector_reader::H5_vector_reader(H5std_string file_name, H5std_string dataset_
     }
 }
 
-void H5_vector_reader::set_transpose(bool value)
+void H5_dataset_reader::set_transpose(bool value)
 {
     if (n_dims == 2)
     {
@@ -46,32 +46,32 @@ void H5_vector_reader::set_transpose(bool value)
         Rcpp::exception("The dimension must be 2");
     }
 }
-void H5_vector_reader::set_exception(bool value)
+void H5_dataset_reader::set_exception(bool value)
 {
     throw_exception = value;
 }
 
-hsize_t H5_vector_reader::get_length()
+hsize_t H5_dataset_reader::get_length()
 {
     return total_length;
 }
 
-int H5_vector_reader::get_suggested_type()
+int H5_dataset_reader::get_suggested_type()
 {
     H5T_class_t data_type = dataset.getDataType().getClass();
     return get_H5_R_suggested_type(data_type);
 }
-hsize_t H5_vector_reader::get_n_dims()
+hsize_t H5_dataset_reader::get_n_dims()
 {
     return n_dims;
 }
 
-hsize_t H5_vector_reader::get_dim(size_t i)
+hsize_t H5_dataset_reader::get_dim(size_t i)
 {
     return dims.at(i);
 }
 
-size_t H5_vector_reader::read(int type, void *buffer, size_t offset, size_t length)
+size_t H5_dataset_reader::read(int type, void *buffer, size_t offset, size_t length)
 {
     try
     {
@@ -92,10 +92,6 @@ size_t H5_vector_reader::read(int type, void *buffer, size_t offset, size_t leng
     return 0;
 }
 
-/*
-
-
-*/
 
 static void read_by_type(int type, DataSet &dataset, DataSpace &dataspace, DataSpace &memspace, void *buffer)
 {
@@ -175,11 +171,8 @@ static void move_by_one(hsize_vec &dims, hsize_vec &index, hsize_t moved_dim_ind
     }
 }
 
-size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size_t length)
-{
-    //Initial the memory space and the data space
-    hsize_t mem_length = length;
-    DataSpace memspace(1, &mem_length, NULL);
+
+void H5_dataset_reader::select_dataspace(size_t offset, size_t length){
     dataspace.selectNone();
     //Get the starting offset in the dataset
     compute_n_dim_offset(dims, sub_start_offset, offset, false);
@@ -230,12 +223,20 @@ size_t H5_vector_reader::read_native(int type, void *buffer, size_t offset, size
             sub_start_offset[i] = sub_end_offset[i];
         }
     }
+}
+
+size_t H5_dataset_reader::read_native(int type, void *buffer, size_t offset, size_t length)
+{
+    //Initial the memory space and the data space
+    hsize_t mem_length = length;
+    DataSpace memspace(1, &mem_length, NULL);
+    select_dataspace(offset,length);
     read_by_type(type, dataset, dataspace, memspace, buffer);
     return length;
 }
 
 static Unique_buffer transpose_buffer;
-size_t H5_vector_reader::read_transposed(int type, void *buffer, size_t offset, size_t length)
+size_t H5_dataset_reader::read_transposed(int type, void *buffer, size_t offset, size_t length)
 {
     uint8_t type_size = get_R_type_size(type);
     //Get the starting offset in the dataset
