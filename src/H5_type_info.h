@@ -29,7 +29,7 @@ public:
     H5_type_info(H5::CompType& type);
     H5_type_info(H5::DataType& type);
     ~H5_type_info();
-    H5T_class_t get_type_id();
+    H5T_class_t get_type_class();
     size_t get_type_size();
     Compound_info& get_compound_info();
     Simple_info& get_simple_info();

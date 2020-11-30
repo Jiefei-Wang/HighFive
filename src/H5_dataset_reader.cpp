@@ -9,20 +9,14 @@ using namespace H5;
 
 typedef std::vector<hsize_t> hsize_vec;
 
-H5_dataset_reader::H5_dataset_reader(H5std_string file_name, H5std_string dataset_name)
+H5_dataset_reader::H5_dataset_reader(H5std_string file_name, H5std_string dataset_name):dataset_info(file_name,dataset_name)
 {
     try
     {
-        file = H5File(file_name, H5F_ACC_RDONLY);
-        dataset = file.openDataSet(dataset_name);
-        dataspace = dataset.getSpace();
-        n_dims = dataspace.getSimpleExtentNdims();
-        dims.resize(n_dims);
-        dataspace.getSimpleExtentDims(dims.data());
-        sub_read_length.resize(n_dims);
-        sub_start_offset.resize(n_dims);
-        sub_end_offset.resize(n_dims);
-        total_length = dataspace.getSimpleExtentNpoints();
+        dataspace = dataset_info.dataset.getSpace();
+        sub_read_length.resize(get_n_dims());
+        sub_start_offset.resize(get_n_dims());
+        sub_end_offset.resize(get_n_dims());
     }
     catch (Exception &error)
     {
@@ -32,13 +26,13 @@ H5_dataset_reader::H5_dataset_reader(H5std_string file_name, H5std_string datase
 
 void H5_dataset_reader::set_transpose(bool value)
 {
-    if (n_dims == 2)
+    if (get_n_dims() == 2)
     {
         transposed = value;
         if (transposed)
         {
-            sub_transposed_start_offset.resize(n_dims);
-            sub_transposed_end_offset.resize(n_dims);
+            sub_transposed_start_offset.resize(get_n_dims());
+            sub_transposed_end_offset.resize(get_n_dims());
         }
     }
     else
@@ -51,24 +45,24 @@ void H5_dataset_reader::set_exception(bool value)
     throw_exception = value;
 }
 
-hsize_t H5_dataset_reader::get_length()
+const hsize_t& H5_dataset_reader::get_length()
 {
-    return total_length;
+    return dataset_info.total_length;
 }
 
 int H5_dataset_reader::get_suggested_type()
 {
-    H5T_class_t data_type = dataset.getDataType().getClass();
+    H5T_class_t data_type = dataset_info.type_info.get_type_class();
     return get_H5_R_suggested_type(data_type);
 }
-hsize_t H5_dataset_reader::get_n_dims()
+const hsize_t& H5_dataset_reader::get_n_dims()
 {
-    return n_dims;
+    return dataset_info.n_dims;
 }
 
-hsize_t H5_dataset_reader::get_dim(size_t i)
+const hsize_t& H5_dataset_reader::get_dim(size_t i)
 {
-    return dims.at(i);
+    return dataset_info.dims.at(i);
 }
 
 size_t H5_dataset_reader::read(int type, void *buffer, size_t offset, size_t length)
@@ -93,23 +87,24 @@ size_t H5_dataset_reader::read(int type, void *buffer, size_t offset, size_t len
 }
 
 
-static void read_by_type(int type, DataSet &dataset, DataSpace &dataspace, DataSpace &memspace, void *buffer)
+void H5_dataset_reader::read_by_type(int type, DataSpace &memspace, void *buffer)
 {
     switch (type)
     {
     case INTSXP:
-        dataset.read(buffer, PredType::NATIVE_INT, memspace, dataspace);
+        dataset_info.dataset.read(buffer, PredType::NATIVE_INT, memspace, dataspace);
         break;
     case REALSXP:
-        dataset.read(buffer, PredType::NATIVE_DOUBLE, memspace, dataspace);
+        dataset_info.dataset.read(buffer, PredType::NATIVE_DOUBLE, memspace, dataspace);
         break;
     case RAWSXP:
-        dataset.read(buffer, PredType::NATIVE_INT8, memspace, dataspace);
+        dataset_info.dataset.read(buffer, PredType::NATIVE_INT8, memspace, dataspace);
         break;
     case LGLSXP:
-        dataset.read(buffer, PredType::NATIVE_INT, memspace, dataspace);
+        dataset_info.dataset.read(buffer, PredType::NATIVE_INT, memspace, dataspace);
         break;
     default:
+        Rcpp::exception("unsupported data type in <read_by_type>");
         break;
     }
 }
@@ -171,35 +166,37 @@ static void move_by_one(hsize_vec &dims, hsize_vec &index, hsize_t moved_dim_ind
     }
 }
 
-
-void H5_dataset_reader::select_dataspace(size_t offset, size_t length){
-    dataspace.selectNone();
+//Select the dataspace by specifying the offset and length
+void H5_dataset_reader::select_dataspace(size_t offset, size_t length, bool overlap_selection){
+    if(!overlap_selection){
+        dataspace.selectNone();
+    }
     //Get the starting offset in the dataset
-    compute_n_dim_offset(dims, sub_start_offset, offset, false);
-    compute_n_dim_offset(dims, sub_end_offset, offset + length, false);
+    compute_n_dim_offset(dataset_info.dims, sub_start_offset, offset, false);
+    compute_n_dim_offset(dataset_info.dims, sub_end_offset, offset + length, false);
     size_t min_read_dim = get_min_read_dimension(sub_start_offset, sub_end_offset);
     //Initialize the subset size
-    for (size_t i = 0; i < n_dims; i++)
+    for (size_t i = 0; i < get_n_dims(); i++)
     {
         sub_read_length[i] = 1;
     }
     size_t buffer_read_length = 0;
     //We select the marginal data first
     //The marginal data is the data that cannot be read by block
-    for (size_t i = min_read_dim + 1; i < n_dims; i++)
+    for (size_t i = min_read_dim + 1; i < get_n_dims(); i++)
     {
-        hsize_t k = n_dims - i + min_read_dim;
+        hsize_t k = get_n_dims() - i + min_read_dim;
         //If the current dimension index is not 0
         //We do the partial reading and make it zero.
         if (sub_start_offset[k] != 0)
         {
-            sub_read_length[k] = dims[k] - sub_start_offset[k];
+            sub_read_length[k] = get_dim(k) - sub_start_offset[k];
             dataspace.selectHyperslab(H5S_SELECT_OR, sub_read_length.data(), sub_start_offset.data());
             sub_start_offset[k] = 0;
             //Move the offset in the higher dimension forward by 1, check if it is out-of-bound
-            move_by_one(dims, sub_start_offset, k - 1);
+            move_by_one(dataset_info.dims, sub_start_offset, k - 1);
         }
-        sub_read_length[k] = dims[k];
+        sub_read_length[k] = get_dim(k);
     }
     //Update the required length
     size_t new_min_read_dim = 0;
@@ -212,7 +209,7 @@ void H5_dataset_reader::select_dataspace(size_t offset, size_t length){
             sub_read_length[i] = 1;
         }
     }
-    for (size_t i = new_min_read_dim; i < n_dims; i++)
+    for (size_t i = new_min_read_dim; i < get_n_dims(); i++)
     {
         if (sub_end_offset[i] != sub_start_offset[i])
         {
@@ -231,7 +228,7 @@ size_t H5_dataset_reader::read_native(int type, void *buffer, size_t offset, siz
     hsize_t mem_length = length;
     DataSpace memspace(1, &mem_length, NULL);
     select_dataspace(offset,length);
-    read_by_type(type, dataset, dataspace, memspace, buffer);
+    read_by_type(type, memspace, buffer);
     return length;
 }
 
@@ -240,25 +237,25 @@ size_t H5_dataset_reader::read_transposed(int type, void *buffer, size_t offset,
 {
     uint8_t type_size = get_R_type_size(type);
     //Get the starting offset in the dataset
-    compute_n_dim_offset(dims, sub_transposed_start_offset, offset, true);
-    compute_n_dim_offset(dims, sub_transposed_end_offset, offset + length, true);
+    compute_n_dim_offset(dataset_info.dims, sub_transposed_start_offset, offset, true);
+    compute_n_dim_offset(dataset_info.dims, sub_transposed_end_offset, offset + length, true);
     hsize_t max_buffer_length = sub_transposed_end_offset[1] - sub_transposed_start_offset[1] + 1;
     transpose_buffer.reserve(type_size * max_buffer_length);
     char *transpose_buffer_ptr = transpose_buffer.get();
     char *buffer_ptr = (char *)buffer;
     //read the data row by row
-    for (hsize_t start_dim0 = 0; start_dim0 < dims[0]; start_dim0++)
+    for (hsize_t start_dim0 = 0; start_dim0 < get_dim(0); start_dim0++)
     {
         hsize_t start_dim1 = sub_transposed_start_offset[0] + (start_dim0 < sub_transposed_start_offset[0]);
         if (start_dim1 <= sub_transposed_end_offset[1])
         {
             hsize_t required_length = 1 + sub_transposed_end_offset[1] -
                                       (start_dim0 >= sub_transposed_end_offset[0]) - start_dim1;
-            read_native(type, transpose_buffer_ptr, start_dim0 * dims[1] + start_dim1, required_length);
+            read_native(type, transpose_buffer_ptr, start_dim0 * get_dim(1) + start_dim1, required_length);
             //move the row data to the buffer
             for (hsize_t j = 0; j < required_length; j++)
             {
-                memcpy(buffer_ptr + type_size * (start_dim0 + (start_dim1 + j) * dims[0]),
+                memcpy(buffer_ptr + type_size * (start_dim0 + (start_dim1 + j) * get_dim(0)),
                        transpose_buffer_ptr + type_size * j, type_size);
             }
         }

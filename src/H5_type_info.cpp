@@ -30,7 +30,7 @@ Simple_info::Simple_info(H5::DataType &type) : type(type)
 {
 }
 
-H5T_class_t H5_type_info::get_type_id()
+H5T_class_t H5_type_info::get_type_class()
 {
     return type_class;
 }
@@ -104,7 +104,7 @@ size_t H5_type_info::get_type_size()
 }
 Compound_info &H5_type_info::get_compound_info()
 {
-    if (get_type_id() != H5T_COMPOUND)
+    if (get_type_class() != H5T_COMPOUND)
     {
         throw Rcpp::exception("The data is not of compound type!");
     }
@@ -112,7 +112,7 @@ Compound_info &H5_type_info::get_compound_info()
 }
 Simple_info &H5_type_info::get_simple_info()
 {
-    if (get_type_id() == H5T_COMPOUND)
+    if (get_type_class() == H5T_COMPOUND)
     {
         throw Rcpp::exception("The data is not of simple type!");
     }

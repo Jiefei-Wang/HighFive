@@ -105,7 +105,7 @@ SEXP test_table_read(int type, String file_name, String table_name, int field_in
 //[[Rcpp::export]]
 void test1(String file_name, String table_name){
     H5_dataset_info info(file_name,table_name);
-    if(info.type_info.get_type_id()==H5T_COMPOUND){
+    if(info.type_info.get_type_class()==H5T_COMPOUND){
         Compound_info& cmp_type = info.type_info.get_compound_info();
         for(auto i: cmp_type.elt_names){
             Rprintf("Type name:%s\n", i.c_str());
