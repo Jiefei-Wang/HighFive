@@ -10,6 +10,7 @@ public:
     H5_dataset_reader(H5std_string file_name, H5std_string dataset_name);
     void set_transpose(bool value);
     size_t read(int type, void *buffer, size_t offset, size_t length);
+    std::string read_str(size_t offset);
     void set_exception(bool value);
     const hsize_t& get_length();
     int get_suggested_type();

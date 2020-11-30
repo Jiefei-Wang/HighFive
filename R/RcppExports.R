@@ -41,3 +41,7 @@ test1 <- function(file_name, table_name) {
     invisible(.Call(`_HighFive_test1`, file_name, table_name))
 }
 
+C_read_h5_string <- function(file_name, dataset_name, offset) {
+    .Call(`_HighFive_C_read_h5_string`, file_name, dataset_name, offset)
+}
+

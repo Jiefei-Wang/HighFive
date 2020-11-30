@@ -112,3 +112,11 @@ void test1(String file_name, String table_name){
         }
     }
 }
+
+// [[Rcpp::export]]
+Rcpp::String C_read_h5_string(String file_name, String dataset_name, size_t offset)
+{
+    H5_dataset_reader h5_reader(file_name, dataset_name);
+    h5_reader.set_exception(true);
+    return h5_reader.read_str(offset);
+}

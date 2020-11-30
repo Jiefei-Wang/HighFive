@@ -9,6 +9,78 @@ using namespace H5;
 
 typedef std::vector<hsize_t> hsize_vec;
 
+
+/*
+========================================================
+Utilities
+========================================================
+*/
+//Get the n-dimensional offset of the subset from the 1-dimensional offset
+static void compute_n_dim_offset(hsize_vec &dims, hsize_vec &n_offset, hsize_t offset, bool transpose)
+{
+    size_t n_dims = dims.size();
+    hsize_t length_rest = offset;
+    for (size_t i = 0; i < n_dims; i++)
+    {
+        size_t j = transpose ? i : (n_dims - 1 - i);
+        n_offset[j] = length_rest % dims[j];
+        length_rest = length_rest / dims[j];
+    }
+    //If length_rest is not zero, it means we will
+    //read the entire data
+    if (length_rest >= 1)
+    {
+        if (!transpose)
+        {
+            n_offset[0] = dims[0];
+        }
+        else
+        {
+            n_offset[n_dims - 1] = dims[n_dims - 1];
+        }
+    }
+}
+
+static hsize_t get_min_read_dimension(hsize_vec &start_off, hsize_vec &end_off)
+{
+    size_t n_dims = start_off.size();
+    for (size_t i = 0; i < n_dims; i++)
+    {
+        if (start_off[i] != end_off[i])
+        {
+            return i;
+        }
+    }
+    return 0;
+}
+//Move the index by one unit in along a specific dimension
+//If the index is out-off-bound, add 1 to the next dimension
+static void move_by_one(hsize_vec &dims, hsize_vec &index, hsize_t moved_dim_index)
+{
+    ++index[moved_dim_index];
+    for (size_t j = moved_dim_index; j != 0; j--)
+    {
+        if (index[j] == dims[j])
+        {
+            index[j] = 0;
+            ++index[j - 1];
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+/*
+========================================================
+Class member functions
+========================================================
+*/
+
+
+
+
 H5_dataset_reader::H5_dataset_reader(H5std_string file_name, H5std_string dataset_name):dataset_info(file_name,dataset_name)
 {
     try
@@ -85,7 +157,17 @@ size_t H5_dataset_reader::read(int type, void *buffer, size_t offset, size_t len
     }
     return 0;
 }
-
+std::string H5_dataset_reader::read_str(size_t offset){
+    if(dataset_info.type_info.get_type_class()!=H5T_STRING){
+        Rcpp::exception("The data type is not string");
+    }
+    H5std_string buf;
+    select_dataspace(offset,1);
+    DataSpace memspace(H5S_SCALAR);
+    StrType datatype(dataset_info.dataset);
+    dataset_info.dataset.read(buf,datatype,memspace,dataspace);
+    return buf;
+}
 
 void H5_dataset_reader::read_by_type(int type, DataSpace &memspace, void *buffer)
 {
@@ -109,62 +191,6 @@ void H5_dataset_reader::read_by_type(int type, DataSpace &memspace, void *buffer
     }
 }
 
-//Get the n-dimensional offset of the subset from the 1-dimensional offset
-static void compute_n_dim_offset(hsize_vec &dims, hsize_vec &n_offset, hsize_t offset, bool transpose)
-{
-    size_t n_dims = dims.size();
-    hsize_t length_rest = offset;
-    for (size_t i = 0; i < n_dims; i++)
-    {
-        size_t j = transpose ? i : (n_dims - 1 - i);
-        n_offset[j] = length_rest % dims[j];
-        length_rest = length_rest / dims[j];
-    }
-    //If length_rest is not zero, it means we will
-    //read the entire data
-    if (length_rest >= 1)
-    {
-        if (!transpose)
-        {
-            n_offset[0] = dims[0];
-        }
-        else
-        {
-            n_offset[n_dims - 1] = dims[n_dims - 1];
-        }
-    }
-}
-
-static hsize_t get_min_read_dimension(hsize_vec &start_off, hsize_vec &end_off)
-{
-    size_t n_dims = start_off.size();
-    for (size_t i = 0; i < n_dims; i++)
-    {
-        if (start_off[i] != end_off[i])
-        {
-            return i;
-        }
-    }
-    return 0;
-}
-//Move the index by one unit in along a specific dimension
-//If the index is out-off-bound, add 1 to the next dimension
-static void move_by_one(hsize_vec &dims, hsize_vec &index, hsize_t moved_dim_index)
-{
-    ++index[moved_dim_index];
-    for (size_t j = moved_dim_index; j != 0; j--)
-    {
-        if (index[j] == dims[j])
-        {
-            index[j] = 0;
-            ++index[j - 1];
-        }
-        else
-        {
-            break;
-        }
-    }
-}
 
 //Select the dataspace by specifying the offset and length
 void H5_dataset_reader::select_dataspace(size_t offset, size_t length, bool overlap_selection){
