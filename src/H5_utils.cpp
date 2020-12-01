@@ -44,7 +44,6 @@ std::string get_H5_type_class(H5::DataType& data_type){
 }
 
 H5::PredType get_H5_type_id(int R_type){
-    hid_t H5_type = 0;
 	switch (R_type)
 	{
 	case INTSXP:
