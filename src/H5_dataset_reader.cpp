@@ -124,7 +124,7 @@ void H5_dataset_reader::set_exception(bool value)
     throw_exception = value;
 }
 
-const hsize_t &H5_dataset_reader::get_length()
+const size_t &H5_dataset_reader::get_length()
 {
     return dataset_info.total_length;
 }
@@ -299,6 +299,8 @@ size_t H5_dataset_reader::read_transposed(int type, void *buffer, size_t offset,
     hsize_t mem_length = dataspace.getSelectNpoints();
     DataSpace memspace(1, &mem_length, NULL);
     read_by_type(type, memspace, transpose_buffer_ptr);
+
+    size_t cpy_count=0;
     for (hsize_t start_dim0 = 0; start_dim0 < get_dim(0); start_dim0++)
     {
         hsize_t start_dim1 = sub_transposed_start_offset[1] + (start_dim0 < sub_transposed_start_offset[0]);
@@ -308,11 +310,11 @@ size_t H5_dataset_reader::read_transposed(int type, void *buffer, size_t offset,
                                       (start_dim0 >= sub_transposed_end_offset[0]) - start_dim1;
             for (hsize_t j = 0; j < required_length; j++)
             {
-                size_t row_major_length = compute_offset(dataset_info.dims, start_dim0, j, true);
-                size_t col_major_length = compute_offset(dataset_info.dims, start_dim0, j, false);
-                memcpy(buffer_ptr + type_size * col_major_length,
-                       transpose_buffer_ptr + type_size * row_major_length,
+                size_t row_major_length = compute_offset(dataset_info.dims, start_dim0, start_dim1+j, true);
+                memcpy(buffer_ptr + type_size * (row_major_length - offset),
+                       transpose_buffer_ptr + type_size * cpy_count,
                        type_size);
+                cpy_count++;
             }
         }
     }

@@ -12,7 +12,7 @@ public:
     size_t read(int type, void *buffer, size_t offset, size_t length);
     std::string read_str(size_t offset);
     void set_exception(bool value);
-    const hsize_t& get_length();
+    const size_t& get_length();
     int get_suggested_type();
     const hsize_t& get_n_dims();
     const hsize_t& get_dim(size_t i);
