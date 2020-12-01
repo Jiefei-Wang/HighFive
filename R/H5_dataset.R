@@ -1,4 +1,4 @@
-h5Dataset<-function(file, name, type = c("auto", "integer", "numeric"), 
+h5Dataset<-function(file, name, compoundAsDataFrame= TRUE, bit64conversion = TRUE,
                     transpose = FALSE, raw = FALSE){
     type <- match.arg(type)
     if(type!="auto"){
@@ -11,6 +11,9 @@ h5Dataset<-function(file, name, type = c("auto", "integer", "numeric"),
     }else{
         dims <- get_dims(file_name = file,
                          dataset_name = name)
+        if(transpose){
+            dim <- rev(dim)
+        }
         data_attributes <- pairlist(dim = as.integer(dims))
     }
     

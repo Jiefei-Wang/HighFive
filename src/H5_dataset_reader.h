@@ -13,7 +13,8 @@ public:
     std::string read_str(size_t offset);
     void set_exception(bool value);
     const size_t& get_length();
-    int get_suggested_type();
+    int get_suggested_type(bool bit64conversion);
+    H5T_class_t get_data_type();
     const hsize_t& get_n_dims();
     const hsize_t& get_dim(size_t i);
 private:

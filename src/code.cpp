@@ -13,7 +13,7 @@ SEXP C_read_h5_altrep(String file_name, String dataset_name, size_t offset, size
 {
     PROTECT_GUARD guard;
     H5_dataset_reader h5_reader(file_name, dataset_name);
-    int R_type = type == 0 ? h5_reader.get_suggested_type() : type;
+    int R_type = type == 0 ? h5_reader.get_suggested_type(true) : type;
     h5_reader.set_transpose(trans);
     h5_reader.set_exception(true);
     SEXP x = guard.protect(Rf_allocVector(R_type, length));
@@ -58,47 +58,6 @@ SEXP get_dims(String file_name, String dataset_name)
     return x;
 }
 
-// [[Rcpp::export]]
-SEXP test(String file_name, String table_name)
-{
-    H5File file = H5File(file_name, H5F_ACC_RDONLY);
-    hsize_t n_field;
-    hsize_t n_record;
-    herr_t error = H5TBget_table_info(file.getId(), table_name.get_cstring(), &n_field, &n_record);
-    char **names_out = new char*[n_field];
-    for (hsize_t i = 0; i < n_field; i++)
-    {
-        names_out[i] = new char[255];
-    }
-    std::vector<size_t> field_sizes;
-    field_sizes.resize(n_field);
-    std::vector<size_t> offset_out;
-    offset_out.resize(n_field);
-    size_t type_size;
-    H5TBget_field_info(file.getId(), table_name.get_cstring(),
-                       names_out, field_sizes.data(), offset_out.data(), &type_size);
-    CharacterVector names(n_field);
-    for (hsize_t i = 0; i < n_field; i++)
-    {
-        names[i]=names_out[i];
-    }
-    for (hsize_t i = 0; i < n_field; i++)
-    {
-        delete[] names_out[i];
-    }
-    delete[] names_out;
-    return names;
-}
-
-// [[Rcpp::export]]
-SEXP test_table_read(int type, String file_name, String table_name, int field_index){
-    H5_table_info table_info(file_name,table_name);
-    H5_table_reader reader(table_info,field_index);
-    PROTECT_GUARD guard;
-    SEXP x = guard.protect(Rf_allocVector(type,table_info.n_record));
-    reader.read(type,DATAPTR(x),0,table_info.n_record);
-    return x;
-}
 
 
 #include "H5_dataset_info.h"
@@ -120,3 +79,6 @@ Rcpp::String C_read_h5_string(String file_name, String dataset_name, size_t offs
     h5_reader.set_exception(true);
     return h5_reader.read_str(offset);
 }
+
+
+

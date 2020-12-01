@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define PACKAGE_NAME "HighFive"
+
 #ifdef Rcpp_hpp
 #ifndef UTILS_ENABLE_R
 #define UTILS_ENABLE_R
