@@ -116,7 +116,8 @@ void H5_dataset_reader::set_transpose(bool value)
     }
     else
     {
-        throw Rcpp::exception("The dimension must be 2");
+        if (value)
+            throw Rcpp::exception("The dimension must be 2 for the transpose");
     }
 }
 void H5_dataset_reader::set_exception(bool value)

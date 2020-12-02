@@ -9,7 +9,7 @@ using namespace Rcpp;
 using namespace H5;
 
 // [[Rcpp::export]]
-SEXP C_read_h5_altrep(String file_name, String dataset_name, size_t offset, size_t length, bool trans = false, int type = 0)
+SEXP C_read_dataset_test(String file_name, String dataset_name, size_t offset, size_t length, bool trans = false, int type = 0)
 {
     PROTECT_GUARD guard;
     H5_dataset_reader h5_reader(file_name, dataset_name);
@@ -85,7 +85,7 @@ Rcpp::String C_read_h5_string(String file_name, String dataset_name, size_t offs
 #include "H5_utils.h"
 SEXP C_make_h5_table_string_altrep(H5_dataset_info& info, size_t i);
 // [[Rcpp::export]]
-SEXP test2(String file_name, String dataset_name,
+SEXP read_table_test(String file_name, String dataset_name,
            bool bit64conversion = false)
 {
     PROTECT_GUARD guard;

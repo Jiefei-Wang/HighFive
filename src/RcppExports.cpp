@@ -73,9 +73,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// C_read_h5_altrep
-SEXP C_read_h5_altrep(String file_name, String dataset_name, size_t offset, size_t length, bool trans, int type);
-RcppExport SEXP _HighFive_C_read_h5_altrep(SEXP file_nameSEXP, SEXP dataset_nameSEXP, SEXP offsetSEXP, SEXP lengthSEXP, SEXP transSEXP, SEXP typeSEXP) {
+// C_read_dataset_test
+SEXP C_read_dataset_test(String file_name, String dataset_name, size_t offset, size_t length, bool trans, int type);
+RcppExport SEXP _HighFive_C_read_dataset_test(SEXP file_nameSEXP, SEXP dataset_nameSEXP, SEXP offsetSEXP, SEXP lengthSEXP, SEXP transSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -85,7 +85,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< size_t >::type length(lengthSEXP);
     Rcpp::traits::input_parameter< bool >::type trans(transSEXP);
     Rcpp::traits::input_parameter< int >::type type(typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(C_read_h5_altrep(file_name, dataset_name, offset, length, trans, type));
+    rcpp_result_gen = Rcpp::wrap(C_read_dataset_test(file_name, dataset_name, offset, length, trans, type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -136,16 +136,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// test2
-SEXP test2(String file_name, String dataset_name, bool bit64conversion);
-RcppExport SEXP _HighFive_test2(SEXP file_nameSEXP, SEXP dataset_nameSEXP, SEXP bit64conversionSEXP) {
+// read_table_test
+SEXP read_table_test(String file_name, String dataset_name, bool bit64conversion);
+RcppExport SEXP _HighFive_read_table_test(SEXP file_nameSEXP, SEXP dataset_nameSEXP, SEXP bit64conversionSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< String >::type file_name(file_nameSEXP);
     Rcpp::traits::input_parameter< String >::type dataset_name(dataset_nameSEXP);
     Rcpp::traits::input_parameter< bool >::type bit64conversion(bit64conversionSEXP);
-    rcpp_result_gen = Rcpp::wrap(test2(file_name, dataset_name, bit64conversion));
+    rcpp_result_gen = Rcpp::wrap(read_table_test(file_name, dataset_name, bit64conversion));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -156,12 +156,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_HighFive_C_make_h5_vector_string_altrep", (DL_FUNC) &_HighFive_C_make_h5_vector_string_altrep, 4},
     {"_HighFive_C_H5open", (DL_FUNC) &_HighFive_C_H5open, 2},
     {"_HighFive_C_H5Dopen", (DL_FUNC) &_HighFive_C_H5Dopen, 2},
-    {"_HighFive_C_read_h5_altrep", (DL_FUNC) &_HighFive_C_read_h5_altrep, 6},
+    {"_HighFive_C_read_dataset_test", (DL_FUNC) &_HighFive_C_read_dataset_test, 6},
     {"_HighFive_get_type_index", (DL_FUNC) &_HighFive_get_type_index, 1},
     {"_HighFive_get_dims", (DL_FUNC) &_HighFive_get_dims, 2},
     {"_HighFive_test1", (DL_FUNC) &_HighFive_test1, 2},
     {"_HighFive_C_read_h5_string", (DL_FUNC) &_HighFive_C_read_h5_string, 3},
-    {"_HighFive_test2", (DL_FUNC) &_HighFive_test2, 3},
+    {"_HighFive_read_table_test", (DL_FUNC) &_HighFive_read_table_test, 3},
     {NULL, NULL, 0}
 };
 
