@@ -9,8 +9,8 @@ C_make_h5_altrep_vector <- function(file_name, dataset_name, type = 0L, transpos
     .Call(`_HighFive_C_make_h5_altrep_vector`, file_name, dataset_name, type, transpose, attributes, bit64conversion)
 }
 
-C_make_h5_string_altrep_vector <- function(file_name, dataset_name, transpose = FALSE, attributes = NULL) {
-    .Call(`_HighFive_C_make_h5_string_altrep_vector`, file_name, dataset_name, transpose, attributes)
+C_make_h5_vector_string_altrep <- function(file_name, dataset_name, transpose = FALSE, attributes = NULL) {
+    .Call(`_HighFive_C_make_h5_vector_string_altrep`, file_name, dataset_name, transpose, attributes)
 }
 
 C_H5open <- function(file_name, read_only = TRUE) {
@@ -39,5 +39,9 @@ test1 <- function(file_name, table_name) {
 
 C_read_h5_string <- function(file_name, dataset_name, offset) {
     .Call(`_HighFive_C_read_h5_string`, file_name, dataset_name, offset)
+}
+
+test2 <- function(file_name, dataset_name, bit64conversion = FALSE) {
+    .Call(`_HighFive_test2`, file_name, dataset_name, bit64conversion)
 }
 

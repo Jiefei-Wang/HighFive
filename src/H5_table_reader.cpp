@@ -20,14 +20,14 @@ void H5_table_reader::init()
 {
     if (dataset_info.type_info.get_type_class() != H5T_COMPOUND)
     {
-        Rcpp::exception("The dataset is not a table!");
+        throw Rcpp::exception("The dataset is not a table!");
     }
     H5_class = dataset_info.type_info.get_compound_info().elt_types[field_index].get_type_class();
     if (H5_class != H5T_FLOAT &&
         H5_class != H5T_INTEGER &&
         H5_class != H5T_STRING)
     {
-        Rcpp::exception("Unsupported table type!");
+        throw Rcpp::exception("Unsupported table type!");
     }
     H5_type = dataset_info.type_info.get_compound_info().elt_types[field_index].get_simple_info().type;
     H5_type_size = dataset_info.type_info.get_compound_info().elt_types[field_index].get_type_size();
@@ -79,17 +79,20 @@ size_t H5_table_reader::read_numeric(int R_type, void *buffer, size_t offset, si
 }
 size_t H5_table_reader::read_raw(void *buffer, size_t offset, size_t length)
 {
-    void *internal_buffer = nullptr;
-    size_t H5_elt_size = get_data_size(1);
-    H5TBread_fields_index(dataset_info.file.getId(),
-                          dataset_info.table_name.c_str(),
-                          1, &field_index,
-                          offset, length,
-                          H5_elt_size,
-                          0,
-                          &H5_elt_size,
-                          internal_buffer);
-
+    herr_t error = H5TBread_fields_index(dataset_info.file.getId(),
+                                         dataset_info.table_name.c_str(),
+                                         1, &field_index,
+                                         offset, length,
+                                         H5_type_size,
+                                         0,
+                                         &H5_type_size,
+                                         buffer);
+    if (error < 0)
+    {
+        std::string err_msg = "Unable to read table, offset:" + std::to_string(offset) + 
+        ", length:" + std::to_string(length);
+        throw Rcpp::exception(err_msg.c_str());
+    }
     return length;
 }
 size_t H5_table_reader::get_length()
@@ -99,5 +102,12 @@ size_t H5_table_reader::get_length()
 
 int H5_table_reader::get_suggested_type(bool bit64conversion)
 {
-    return get_H5_R_suggested_type(H5_class,H5_type_size,bit64conversion);
+    return get_H5_R_suggested_type(H5_class, H5_type_size, bit64conversion);
+}
+H5T_class_t H5_table_reader::get_data_type(){
+    return H5_class;
+}
+
+size_t H5_table_reader::get_type_size(){
+    return H5_type_size;
 }
