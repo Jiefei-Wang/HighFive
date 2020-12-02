@@ -7,6 +7,7 @@ class H5_type_info;
 
 struct Compound_info{
     H5::CompType type;
+    size_t elt_numbers;
     std::vector<H5_type_info> elt_types;
     std::vector<size_t> elt_offsets;
     std::vector<H5std_string> elt_names;

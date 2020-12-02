@@ -80,7 +80,7 @@ size_t H5_table_reader::read_numeric(int R_type, void *buffer, size_t offset, si
 size_t H5_table_reader::read_raw(void *buffer, size_t offset, size_t length)
 {
     void *internal_buffer = nullptr;
-    size_t H5_elt_size = dataset_info.type_info.get_compound_info().elt_types[field_index].get_type_size();
+    size_t H5_elt_size = get_data_size(1);
     H5TBread_fields_index(dataset_info.file.getId(),
                           dataset_info.table_name.c_str(),
                           1, &field_index,

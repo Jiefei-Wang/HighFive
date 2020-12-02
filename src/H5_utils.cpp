@@ -1,10 +1,45 @@
-#include <string>
 #include <Rcpp.h>
 #include "H5Cpp.h"
-#include "utils.h"
+#include "H5_utils.h"
 
-using namespace Rcpp;
-using namespace H5;
+
+std::string get_H5_type_class_name(H5::DataType& data_type){
+    return get_H5_type_class_name(data_type.getClass());
+}
+
+std::string get_H5_type_class_name(H5T_class_t data_class){
+    switch (data_class)
+    {
+    case H5T_NO_CLASS:
+        return "NO_CLASS";
+    case H5T_INTEGER:
+        return "INTEGER";
+    case H5T_FLOAT:
+        return "FLOAT";
+    case H5T_TIME:
+        return "TIME";
+    case H5T_STRING:
+        return "STRING";
+    case H5T_BITFIELD:
+        return "BITFIELD";
+    case H5T_OPAQUE:
+        return "OPAQUE";
+    case H5T_COMPOUND:
+        return "COMPOUND";
+    case H5T_REFERENCE:
+        return "REFERENCE";
+    case H5T_ENUM:
+        return "ENUM";
+    case H5T_VLEN:
+        return "VLEN";
+    case H5T_ARRAY:
+        return "ARRAY";
+    case H5T_NCLASSES:
+        return "NCLASSES";
+    default:
+        return "UNKNOWN";
+    }
+}
 
 H5::PredType get_R_H5_type_id(int R_type)
 {

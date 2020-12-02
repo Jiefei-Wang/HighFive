@@ -3,11 +3,11 @@
 
 Compound_info::Compound_info(H5::CompType &type) : type(type)
 {
-    int n_numbers = type.getNmembers();
-    elt_types.reserve(n_numbers);
-    elt_offsets.reserve(n_numbers);
-    elt_names.reserve(n_numbers);
-    for (int i = 0; i < n_numbers; i++)
+    elt_numbers = type.getNmembers();
+    elt_types.reserve(elt_numbers);
+    elt_offsets.reserve(elt_numbers);
+    elt_names.reserve(elt_numbers);
+    for (size_t i = 0; i < elt_numbers; i++)
     {
         H5::DataType elt_type = type.getMemberDataType(i);
         elt_offsets.push_back(type.getMemberOffset(i));
