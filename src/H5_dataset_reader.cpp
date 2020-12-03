@@ -116,7 +116,8 @@ void H5_dataset_reader::set_transpose(bool value)
     }
     else
     {
-        Rcpp::exception("The dimension must be 2");
+        if (value)
+            throw Rcpp::exception("The dimension must be 2 for the transpose");
     }
 }
 void H5_dataset_reader::set_exception(bool value)
@@ -174,7 +175,7 @@ std::string H5_dataset_reader::read_str(size_t offset)
 {
     if (dataset_info.type_info.get_type_class() != H5T_STRING)
     {
-        Rcpp::exception("The data type is not string");
+        throw Rcpp::exception("The data type is not string");
     }
     H5std_string buf;
     select_dataspace(offset, 1);
@@ -201,7 +202,7 @@ void H5_dataset_reader::read_by_type(int type, DataSpace &memspace, void *buffer
         dataset_info.dataset.read(buffer, PredType::NATIVE_INT, memspace, dataspace);
         break;
     default:
-        Rcpp::exception("unsupported data type in <read_by_type>");
+        throw Rcpp::exception("unsupported data type in <read_by_type>");
         break;
     }
 }

@@ -36,20 +36,20 @@ SEXP C_make_h5_altrep_vector(String file_name, String dataset_name, int type = 0
     return x;
 }
 
-Rboolean string_dataset_altrep_Inspect(SEXP x, int pre, int deep, int pvec,
+Rboolean vector_string_altrep_Inspect(SEXP x, int pre, int deep, int pvec,
                                        void (*inspect_subtree)(SEXP, int, int, int))
 {
     Rprintf("H5 String dataset altrep object\n");
     return TRUE;
 }
 
-R_xlen_t string_dataset_altrep_length(SEXP x)
+R_xlen_t vector_string_altrep_length(SEXP x)
 {
     H5_dataset_reader *h5_reader = (H5_dataset_reader *)R_ExternalPtrAddr(R_altrep_data2(x));
     return h5_reader->get_length();
 }
 
-void *string_dataset_altrep_dataptr(SEXP x, Rboolean writeable)
+void *vector_string_altrep_dataptr(SEXP x, Rboolean writeable)
 {
     if(R_altrep_data1(x)!=R_NilValue){
         return DATAPTR(R_altrep_data1(x));
@@ -62,12 +62,12 @@ void *string_dataset_altrep_dataptr(SEXP x, Rboolean writeable)
     R_set_altrep_data1(x, stringVec);
     return DATAPTR(stringVec);
 }
-const void *string_dataset_altrep_dataptr_or_null(SEXP x)
+const void *vector_string_altrep_dataptr_or_null(SEXP x)
 {
     return NULL;
 }
 
-SEXP string_dataset_altrep_elt(SEXP x, R_xlen_t i)
+SEXP vector_string_altrep_elt(SEXP x, R_xlen_t i)
 {
     if(R_altrep_data1(x)!=R_NilValue){
         return STRING_ELT(R_altrep_data1(x),i);
@@ -77,22 +77,22 @@ SEXP string_dataset_altrep_elt(SEXP x, R_xlen_t i)
     }
 }
 
-R_altrep_class_t H5_altrep_dataset_string_class;
+R_altrep_class_t H5_vector_string_altrep_class;
 //[[Rcpp::init]]
-void init_string_class(DllInfo *dll)
+void init_vector_string_class(DllInfo *dll)
 {
-    char class_name[] = "H5_altrep_dataset_string";
-    R_altrep_class_t &altrep_class = H5_altrep_dataset_string_class;
+    char class_name[] = "H5_vector_string_altrep";
+    R_altrep_class_t &altrep_class = H5_vector_string_altrep_class;
     altrep_class = R_make_altstring_class(class_name, PACKAGE_NAME, dll);
-    R_set_altrep_Inspect_method(altrep_class, string_dataset_altrep_Inspect);
-    R_set_altrep_Length_method(altrep_class, string_dataset_altrep_length);
-    R_set_altvec_Dataptr_method(altrep_class, string_dataset_altrep_dataptr);
-    R_set_altvec_Dataptr_or_null_method(altrep_class, string_dataset_altrep_dataptr_or_null);
-    R_set_altstring_Elt_method(altrep_class, string_dataset_altrep_elt);
+    R_set_altrep_Inspect_method(altrep_class, vector_string_altrep_Inspect);
+    R_set_altrep_Length_method(altrep_class, vector_string_altrep_length);
+    R_set_altvec_Dataptr_method(altrep_class, vector_string_altrep_dataptr);
+    R_set_altvec_Dataptr_or_null_method(altrep_class, vector_string_altrep_dataptr_or_null);
+    R_set_altstring_Elt_method(altrep_class, vector_string_altrep_elt);
 }
 
 // [[Rcpp::export]]
-SEXP C_make_h5_string_altrep_vector(String file_name, String dataset_name, bool transpose = false, SEXP attributes = R_NilValue)
+SEXP C_make_h5_vector_string_altrep(String file_name, String dataset_name, bool transpose = false, SEXP attributes = R_NilValue)
 {
     PROTECT_GUARD guard;
     H5_dataset_reader *h5_reader = new H5_dataset_reader(file_name, dataset_name);
@@ -102,7 +102,7 @@ SEXP C_make_h5_string_altrep_vector(String file_name, String dataset_name, bool 
     {
         Rf_error("The dataset is not of string type\n");
     }
-    SEXP res = guard.protect(R_new_altrep(H5_altrep_dataset_string_class, R_NilValue, extPtr));
+    SEXP res = guard.protect(R_new_altrep(H5_vector_string_altrep_class, R_NilValue, extPtr));
     if (attributes != R_NilValue)
     {
         SET_ATTRIB(res, attributes);

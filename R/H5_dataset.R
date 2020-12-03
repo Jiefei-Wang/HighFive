@@ -1,3 +1,10 @@
+#' Read hdf5 file data
+#' 
+#' Read hdf5 file data, this function returns ALTREP objects
+#' to represent the dataset in R.
+#' 
+#' 
+#' @export
 h5Dataset<-function(file, name, bit64conversion = TRUE,
                     transpose = FALSE, raw = FALSE){
     H5_type <- C_get_H5_type(file, name)
@@ -24,7 +31,7 @@ h5Atomic<- function(file, name, bit64conversion = TRUE,
         dims <- get_dims(file_name = file,
                          dataset_name = name)
         if(transpose){
-            dim <- rev(dim)
+            dims <- rev(dims)
         }
         data_attributes <- pairlist(dim = as.integer(dims))
     }
