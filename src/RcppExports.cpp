@@ -112,6 +112,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// C_get_H5_type
+String C_get_H5_type(String file_name, String dataset_name);
+RcppExport SEXP _HighFive_C_get_H5_type(SEXP file_nameSEXP, SEXP dataset_nameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< String >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< String >::type dataset_name(dataset_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_get_H5_type(file_name, dataset_name));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test1
 void test1(String file_name, String table_name);
 RcppExport SEXP _HighFive_test1(SEXP file_nameSEXP, SEXP table_nameSEXP) {
@@ -146,6 +158,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_HighFive_C_read_h5_altrep", (DL_FUNC) &_HighFive_C_read_h5_altrep, 6},
     {"_HighFive_get_type_index", (DL_FUNC) &_HighFive_get_type_index, 1},
     {"_HighFive_get_dims", (DL_FUNC) &_HighFive_get_dims, 2},
+    {"_HighFive_C_get_H5_type", (DL_FUNC) &_HighFive_C_get_H5_type, 2},
     {"_HighFive_test1", (DL_FUNC) &_HighFive_test1, 2},
     {"_HighFive_C_read_h5_string", (DL_FUNC) &_HighFive_C_read_h5_string, 3},
     {NULL, NULL, 0}

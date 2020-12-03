@@ -33,6 +33,10 @@ get_dims <- function(file_name, dataset_name) {
     .Call(`_HighFive_get_dims`, file_name, dataset_name)
 }
 
+C_get_H5_type <- function(file_name, dataset_name) {
+    .Call(`_HighFive_C_get_H5_type`, file_name, dataset_name)
+}
+
 test1 <- function(file_name, table_name) {
     invisible(.Call(`_HighFive_test1`, file_name, table_name))
 }

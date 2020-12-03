@@ -4,6 +4,7 @@
 #include "H5_dataset_reader.h"
 #include "H5_table_reader.h"
 #include "hdf5_hl.h"
+#include "H5_utils.h"
 
 using namespace Rcpp;
 using namespace H5;
@@ -56,6 +57,12 @@ SEXP get_dims(String file_name, String dataset_name)
         SET_REAL_ELT(x, n_dims - i - 1, h5_reader.get_dim(i));
     }
     return x;
+}
+
+//[[Rcpp::export]]
+String C_get_H5_type(String file_name, String dataset_name){
+    H5_dataset_info info(file_name,dataset_name);
+    return get_H5_type_class_name(info.type_info.get_type_class());
 }
 
 
