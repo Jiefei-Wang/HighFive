@@ -15,11 +15,17 @@ h5Dataset<-function(file, name, bit64conversion = TRUE,
     }
     if(H5_type == "COMPOUND"){
         x <- h5List(file, name, bit64conversion = bit64conversion,
-                      raw = raw)
+                    raw = raw)
+        return(x)
+    }
+    if(H5_type=="STRING"){
+        x <- h5String(file,name,
+                 transpose = transpose, raw = raw)
         return(x)
     }
     stop("Unsupported data type: <", H5_type, ">")
 }
+
 
 
 h5Atomic<- function(file, name, bit64conversion = TRUE,
@@ -45,7 +51,24 @@ h5Atomic<- function(file, name, bit64conversion = TRUE,
     x
 }
 
-
+h5String <- function(file, name, transpose = FALSE, raw = FALSE){
+    if(raw){
+        data_attributes <- NULL
+    }else{
+        dims <- get_dims(file_name = file,
+                         dataset_name = name)
+        if(transpose){
+            dims <- rev(dims)
+        }
+        data_attributes <- pairlist(dim = as.integer(dims))
+    }
+    
+    x <- C_make_h5_vector_string_altrep(file_name = file,
+                                        dataset_name = name, 
+                                        transpose = transpose,
+                                        attributes = data_attributes)
+    x
+}
 
 h5List <- function(file, name, bit64conversion = TRUE, raw = FALSE){
     x <- C_make_h5_altrep_table(file_name=file,
